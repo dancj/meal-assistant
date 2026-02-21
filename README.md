@@ -1,66 +1,57 @@
-# 🍽️ Meal Planning Assistant (Automated Weekly Meal Planner)
+# Meal Assistant
 
-## 🎯 Goal
-Automatically generate a weekly meal plan using your own recipes and deliver it to you via email — all using free/low-cost tools.
+Automatically generate a weekly meal plan (5 dinners + grocery list) from your own recipes and deliver it via email — all using free-tier services.
 
----
+## Tech Stack
 
-## 🛠️ Tech Stack
-- **Frontend**: Next.js + React + TypeScript (hosted on Vercel, free tier)  
-- **Backend API Routes**: Serverless functions in Next.js  
-- **Storage**: Recipes stored in Google Sheets  
-- **AI Meal Planning**: OpenAI GPT-4 or GPT-3.5 via API  
-- **Email Delivery**: Gmail API via Nodemailer  
-- **Calendar Sync**: Google Calendar API (Skylight-compatible)  
-- **Automation**: GitHub Actions scheduled weekly (e.g., every Sunday)  
+- **Frontend:** Next.js + React + TypeScript (hosted on Vercel, free tier)
+- **Backend:** Next.js API routes (serverless)
+- **Storage:** [Supabase](https://supabase.com) (Postgres, free tier)
+- **AI Meal Planning:** [Google Gemini](https://ai.google.dev) (free tier)
+- **Email Delivery:** [Resend](https://resend.com) (free tier)
+- **Automation:** GitHub Actions (weekly cron schedule)
 
----
+## How It Works
 
-## 🔄 Workflow
-1. **Weekly Trigger**: A GitHub Action runs on a schedule (e.g., every Sunday).  
-2. **API Call**: It triggers a Vercel-hosted API route (`/api/generate-plan`).  
-3. **Meal Plan Generation**:  
-    - Fetches recipes from Google Sheets.  
-    - Sends them to OpenAI GPT to generate a meal plan.  
-4. **Delivery**:  
-    - Emails the plan to you via Gmail.   
-5. **Result**: You receive your meal plan in your inbox!  
+1. A GitHub Action triggers weekly (or you trigger on-demand).
+2. It calls the Vercel-hosted API route `/api/generate-plan`.
+3. The API fetches your recipes from Supabase.
+4. Recipes and dietary preferences are sent to Google Gemini, which generates a 5-dinner meal plan with a consolidated grocery list.
+5. The plan is emailed to your household via Resend.
 
----
+## Getting Started
 
-## 🚀 Getting Started
-1. Clone the repository:  
+1. Clone the repository:
     ```bash
-    git clone https://github.com/your-username/meal-assistant.git
+    git clone https://github.com/dancj/meal-assistant.git
     cd meal-assistant
     ```
-2. Install dependencies:  
+2. Install dependencies:
     ```bash
     npm install
     ```
-3. Set up environment variables in a `.env.local` file:  
+3. Create a `.env.local` file (see `sample.env.local`):
     ```env
-    GOOGLE_SHEETS_ID=<your-google-sheets-id>
-    OPENAI_API_KEY=<your-openai-api-key>
-    GMAIL_CLIENT_ID=<your-gmail-client-id>
-    GMAIL_CLIENT_SECRET=<your-gmail-client-secret>
-    GMAIL_REFRESH_TOKEN=<your-gmail-refresh-token>
-    GOOGLE_CALENDAR_ID=<your-google-calendar-id>
+    SUPABASE_URL=your-supabase-project-url
+    SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+    GEMINI_API_KEY=your-gemini-api-key
+    RESEND_API_KEY=your-resend-api-key
+    EMAIL_FROM=onboarding@resend.dev
+    EMAIL_RECIPIENTS=you@example.com
+    CRON_SECRET=a-random-secret-string
     ```
-4. Run the development server:  
+4. Run the development server:
     ```bash
     npm run dev
     ```
 5. Deploy to Vercel for production.
 
----
+> **Note:** Resend's free tier sends from `onboarding@resend.dev`, which only delivers to the account owner's email. To send to other household members, [verify a custom domain](https://resend.com/docs/dashboard/domains/introduction) in Resend.
 
-## 🤝 Contributing
-Contributions are welcome! Please open an issue with your ideas and/or submit a pull request with your improvements.
+## Contributing
 
----
+Contributions are welcome! Please open an issue or submit a pull request.
 
-## 📜 License
+## License
+
 This project is licensed under the [MIT License](LICENSE).
-
----  

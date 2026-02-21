@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Meal Assistant: automatically generates a weekly meal plan from custom recipes (stored in Google Sheets), uses OpenAI GPT to create the plan, and delivers it via email (Gmail API). Designed to run as a scheduled GitHub Action calling a Vercel-hosted API route.
+Meal Assistant: automatically generates a weekly meal plan (5 dinners + grocery list) from household recipes and delivers it via email. Designed to run as a scheduled GitHub Action calling a Vercel-hosted API route, with an on-demand trigger option.
 
 ## Commands
 
@@ -17,28 +17,34 @@ No test framework is configured yet.
 
 ## Architecture
 
-- **Framework:** Next.js 15 with App Router, React 19, TypeScript
-- **Styling:** Tailwind CSS v4 via PostCSS
+- **Framework:** Next.js 15 with App Router, React 19, TypeScript (strict mode)
+- **Styling:** Tailwind CSS v4 via PostCSS (CSS-based config with `@theme` directives, no `tailwind.config.ts`)
 - **Path alias:** `@/*` maps to `./src/*`
+- **Deployment:** Vercel (free tier)
 
 ### Source Layout
 
-All source code lives in `src/app/` using the Next.js App Router convention. API routes should be created as `src/app/api/[route]/route.ts`.
+All source code lives under `src/` using the Next.js App Router convention:
+- Pages and layouts: `src/app/`
+- API routes: `src/app/api/[route]/route.ts`
+- Shared clients/utilities: `src/lib/`
+- TypeScript types: `src/types/`
 
-### Planned Workflow
+### Tech Stack (All Free Tier)
 
-1. GitHub Action triggers weekly → calls `/api/generate-plan`
-2. API route fetches recipes from Google Sheets (`googleapis`)
-3. Sends recipes to OpenAI GPT to generate a meal plan (`openai`)
-4. Emails the plan via Gmail API (`nodemailer`)
+- **Storage:** Supabase (Postgres) via `@supabase/supabase-js` — recipe database
+- **LLM:** Google Gemini via `@google/genai` — meal plan generation
+- **Email:** Resend via `resend` — meal plan delivery
+- **Automation:** GitHub Actions (weekly cron) + on-demand API endpoint
 
-### Key Dependencies
+### Core Workflow
 
-- `openai` — OpenAI API client for meal plan generation
-- `googleapis` — Google Sheets (recipe storage) and Calendar integration
-- `nodemailer` — Email delivery via Gmail
-- `axios` — HTTP client
+1. Trigger fires (GitHub Actions weekly cron or on-demand POST)
+2. `POST /api/generate-plan` fetches recipes from Supabase
+3. Sends recipes + dietary preferences to Google Gemini
+4. Gemini returns structured JSON: 5 dinners + consolidated grocery list
+5. Formats and emails the plan via Resend
 
 ### Environment Variables
 
-See `sample.env.local` for required keys: Google service account credentials, Sheet ID, Gmail OAuth credentials, and OpenAI API key.
+See `sample.env.local` for required keys: Supabase credentials, Gemini API key, Resend API key, email config, and CRON_SECRET for endpoint protection.

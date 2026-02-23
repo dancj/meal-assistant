@@ -1,7 +1,7 @@
 ---
 title: "Set up Supabase + recipe CRUD API routes"
 type: feat
-status: active
+status: complete
 date: 2026-02-22
 origin: docs/brainstorms/2026-02-21-meal-assistant-mvp-brainstorm.md
 ---

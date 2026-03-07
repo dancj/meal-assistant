@@ -1,7 +1,7 @@
 ---
 title: "Set up Resend for meal plan email delivery"
 type: feat
-status: active
+status: completed
 date: 2026-02-23
 origin: docs/brainstorms/2026-02-21-meal-assistant-mvp-brainstorm.md
 ---
@@ -38,23 +38,23 @@ Integrate email sending directly into the `POST /api/generate-plan` route (no se
 
 ## Acceptance Criteria
 
-- [ ] `src/lib/resend.ts` refactored to `getResend()` lazy init pattern
-- [ ] `src/lib/email.ts` created with `formatMealPlanEmail()` and `sendMealPlanEmail()` functions
-- [ ] HTML email renders 5 dinner cards (recipe name, day, servings, alternative note if present) + grocery list
-- [ ] Email uses inline CSS, is mobile-friendly, and includes a plain-text fallback
-- [ ] Dynamic content (recipe names, ingredients) is HTML-escaped
-- [ ] `EMAIL_RECIPIENTS` parsed correctly: split on comma, trim whitespace, filter empty strings
-- [ ] Missing/empty `EMAIL_RECIPIENTS` or `EMAIL_FROM` produces a clear error (not a crash)
-- [ ] Both Resend return-value errors and thrown exceptions are handled
-- [ ] Email failure returns 200 with `{ success: true, plan, emailSent: false, emailError: "..." }`
-- [ ] Email success returns 200 with `{ success: true, plan, emailSent: true }`
-- [ ] Resend email ID logged on successful send
-- [ ] `weekOf` date formatted as human-readable (e.g., "February 23, 2026") in subject and body
-- [ ] Tests for `formatMealPlanEmail` (pure function, snapshot-friendly)
-- [ ] Tests for `sendMealPlanEmail` (mock Resend, test success/failure/missing env vars)
-- [ ] Tests for `parseRecipients` utility
-- [ ] Route integration tests covering email success and failure paths
-- [ ] `sample.env.local` entries documented (already exist: `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_RECIPIENTS`)
+- [x]`src/lib/resend.ts` refactored to `getResend()` lazy init pattern
+- [x]`src/lib/email.ts` created with `formatMealPlanEmail()` and `sendMealPlanEmail()` functions
+- [x]HTML email renders 5 dinner cards (recipe name, day, servings, alternative note if present) + grocery list
+- [x]Email uses inline CSS, is mobile-friendly, and includes a plain-text fallback
+- [x]Dynamic content (recipe names, ingredients) is HTML-escaped
+- [x]`EMAIL_RECIPIENTS` parsed correctly: split on comma, trim whitespace, filter empty strings
+- [x]Missing/empty `EMAIL_RECIPIENTS` or `EMAIL_FROM` produces a clear error (not a crash)
+- [x]Both Resend return-value errors and thrown exceptions are handled
+- [x]Email failure returns 200 with `{ success: true, plan, emailSent: false, emailError: "..." }`
+- [x]Email success returns 200 with `{ success: true, plan, emailSent: true }`
+- [x]Resend email ID logged on successful send
+- [x]`weekOf` date formatted as human-readable (e.g., "February 23, 2026") in subject and body
+- [x]Tests for `formatMealPlanEmail` (pure function, snapshot-friendly)
+- [x]Tests for `sendMealPlanEmail` (mock Resend, test success/failure/missing env vars)
+- [x]Tests for `parseRecipients` utility
+- [x]Route integration tests covering email success and failure paths
+- [x]`sample.env.local` entries documented (already exist: `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_RECIPIENTS`)
 
 ## Success Metrics
 

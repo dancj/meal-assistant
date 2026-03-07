@@ -3,8 +3,9 @@ import { createSupabaseMock } from "@/test/helpers";
 
 const supabaseMock = createSupabaseMock();
 
-const { generateContentMock } = vi.hoisted(() => ({
+const { generateContentMock, sendMealPlanEmailMock } = vi.hoisted(() => ({
   generateContentMock: vi.fn(),
+  sendMealPlanEmailMock: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase", () => ({
@@ -13,6 +14,10 @@ vi.mock("@/lib/supabase", () => ({
 
 vi.mock("@/lib/gemini", () => ({
   getAI: vi.fn(() => ({ models: { generateContent: generateContentMock } })),
+}));
+
+vi.mock("@/lib/email", () => ({
+  sendMealPlanEmail: sendMealPlanEmailMock,
 }));
 
 const CRON_SECRET = "test-secret";
@@ -86,6 +91,8 @@ describe("POST /api/generate-plan", () => {
   beforeEach(() => {
     supabaseMock.reset();
     generateContentMock.mockReset();
+    sendMealPlanEmailMock.mockReset();
+    sendMealPlanEmailMock.mockResolvedValue({ emailId: "email-123" });
     vi.stubEnv("CRON_SECRET", CRON_SECRET);
   });
 
@@ -371,6 +378,50 @@ describe("POST /api/generate-plan", () => {
 
       expect(response.status).toBe(500);
       expect(body.error).toBe("Failed to generate a valid meal plan");
+    });
+  });
+
+  describe("email delivery", () => {
+    beforeEach(() => {
+      supabaseMock.resolveWith(FIVE_RECIPES);
+      generateContentMock.mockResolvedValue({
+        text: JSON.stringify(validMealPlanResponse()),
+      });
+    });
+
+    it("returns 200 with emailSent: true on email success", async () => {
+      sendMealPlanEmailMock.mockResolvedValue({ emailId: "email-456" });
+
+      const response = await POST(postRequest());
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body.success).toBe(true);
+      expect(body.emailSent).toBe(true);
+      expect(body.plan.dinners).toHaveLength(5);
+    });
+
+    it("returns 200 with emailSent: false on email failure", async () => {
+      sendMealPlanEmailMock.mockRejectedValue(new Error("Resend API down"));
+
+      const response = await POST(postRequest());
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body.success).toBe(true);
+      expect(body.emailSent).toBe(false);
+      expect(body.emailError).toBe("Resend API down");
+      expect(body.plan.dinners).toHaveLength(5);
+    });
+
+    it("includes plan in response even when email fails", async () => {
+      sendMealPlanEmailMock.mockRejectedValue(new Error("fail"));
+
+      const response = await POST(postRequest());
+      const body = await response.json();
+
+      expect(body.plan).toBeDefined();
+      expect(body.plan.groceryList).toHaveLength(1);
     });
   });
 });

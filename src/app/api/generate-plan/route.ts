@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { getAI } from "@/lib/gemini";
+import { sendMealPlanEmail } from "@/lib/email";
 import { Type } from "@google/genai";
 import type { Recipe } from "@/types/recipe";
 import type { MealPlan } from "@/types/meal-plan";
@@ -245,6 +246,19 @@ export async function POST(request: Request) {
   // 9. Override weekOf with server-computed value
   plan.weekOf = weekOf;
 
-  // 10. Return
-  return NextResponse.json({ success: true, plan });
+  // 10. Send email
+  let emailSent = false;
+  let emailError: string | undefined;
+
+  try {
+    const result = await sendMealPlanEmail(plan);
+    emailSent = true;
+    console.log("Meal plan email sent successfully:", result.emailId);
+  } catch (err) {
+    emailError = err instanceof Error ? err.message : "Failed to send email";
+    console.error("Failed to send meal plan email:", err);
+  }
+
+  // 11. Return
+  return NextResponse.json({ success: true, plan, emailSent, emailError });
 }

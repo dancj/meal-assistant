@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,7 +28,20 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <header className="border-b border-black/10 dark:border-white/10">
+          <nav className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
+            <Link href="/" className="font-semibold text-lg">
+              Meal Assistant
+            </Link>
+            <Link
+              href="/recipes/new"
+              className="bg-foreground text-background px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              Add Recipe
+            </Link>
+          </nav>
+        </header>
+        <main className="max-w-3xl mx-auto px-4 py-8">{children}</main>
       </body>
     </html>
   );

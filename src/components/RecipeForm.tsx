@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, X } from "lucide-react";
+import { Plus, X, ChefHat, Tag, Clock, Link2, NotebookPen, ShoppingBasket } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -133,7 +133,7 @@ export default function RecipeForm({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label>Ingredients *</Label>
+          <Label><ShoppingBasket className="size-3.5 text-primary/70 inline mr-1.5" />Ingredients *</Label>
           <Button
             type="button"
             variant="ghost"
@@ -189,7 +189,7 @@ export default function RecipeForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="instructions">Instructions</Label>
+        <Label htmlFor="instructions"><ChefHat className="size-3.5 text-primary/70 inline mr-1.5" />Instructions</Label>
         <Textarea
           id="instructions"
           value={instructions}
@@ -200,7 +200,7 @@ export default function RecipeForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="tags">Tags</Label>
+        <Label htmlFor="tags"><Tag className="size-3.5 text-primary/70 inline mr-1.5" />Tags</Label>
         <Input
           id="tags"
           type="text"
@@ -210,9 +210,9 @@ export default function RecipeForm({
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-4 bg-accent/50 rounded-xl p-4 -mx-1">
         <div className="space-y-2">
-          <Label htmlFor="servings">Servings</Label>
+          <Label htmlFor="servings"><Clock className="size-3.5 text-primary/70 inline mr-1.5" />Servings</Label>
           <Input
             id="servings"
             type="number"
@@ -245,7 +245,7 @@ export default function RecipeForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="sourceUrl">Source URL</Label>
+        <Label htmlFor="sourceUrl"><Link2 className="size-3.5 text-primary/70 inline mr-1.5" />Source URL</Label>
         <Input
           id="sourceUrl"
           type="url"
@@ -256,7 +256,7 @@ export default function RecipeForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="notes">Notes</Label>
+        <Label htmlFor="notes"><NotebookPen className="size-3.5 text-primary/70 inline mr-1.5" />Notes</Label>
         <Textarea
           id="notes"
           value={notes}

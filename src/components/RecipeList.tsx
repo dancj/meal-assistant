@@ -32,7 +32,7 @@ export default function RecipeList({ recipes }: { recipes: Recipe[] }) {
   if (recipes.length === 0) {
     return (
       <div className="text-center py-20" data-testid="empty-state">
-        <BookOpen className="size-12 text-muted-foreground/40 mx-auto mb-4" />
+        <BookOpen className="size-12 text-primary/30 mx-auto mb-4" />
         <p className="text-lg text-muted-foreground mb-2">No recipes yet</p>
         <p className="text-sm text-muted-foreground/70 mb-6">
           Add your first recipe to get started with meal planning.
@@ -91,7 +91,7 @@ export default function RecipeList({ recipes }: { recipes: Recipe[] }) {
               href={`/recipes/${recipe.id}`}
               data-testid="recipe-list-item"
             >
-              <Card className="px-4 py-3 hover:bg-accent/50 transition-colors cursor-pointer">
+              <Card className="px-4 py-3 hover:bg-accent/60 hover:border-primary/20 transition-colors cursor-pointer border-l-2 border-l-primary/20">
                 <div className="flex items-center justify-between">
                   <h2 className="font-medium">{recipe.name}</h2>
                   {recipe.servings && (
@@ -103,7 +103,7 @@ export default function RecipeList({ recipes }: { recipes: Recipe[] }) {
                 {recipe.tags.length > 0 && (
                   <div className="flex gap-1 mt-1.5">
                     {recipe.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-[11px] h-4 px-1.5">
+                      <Badge key={tag} variant="secondary" className="text-[11px] h-4 px-1.5 text-primary/80">
                         {tag}
                       </Badge>
                     ))}

@@ -29,7 +29,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+        <header className="border-b border-primary/15 bg-background/80 backdrop-blur-sm sticky top-0 z-10">
           <nav className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2 font-semibold text-lg hover:opacity-80 transition-opacity">
               <UtensilsCrossed className="size-5 text-primary" />

@@ -31,7 +31,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="size-6 text-muted-foreground animate-spin" />
+        <Loader2 className="size-6 text-primary/60 animate-spin" />
       </div>
     );
   }

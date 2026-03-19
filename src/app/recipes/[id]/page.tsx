@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Pencil, Clock, Users, Loader2 } from "lucide-react";
+import { ChevronLeft, Pencil, Clock, Users, Loader2, ShoppingBasket, ChefHat, NotebookPen, Link2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -41,7 +41,7 @@ export default function RecipeDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="size-6 text-muted-foreground animate-spin" />
+        <Loader2 className="size-6 text-primary/60 animate-spin" />
       </div>
     );
   }
@@ -117,7 +117,7 @@ export default function RecipeDetailPage() {
 
       <Card className="mt-8">
         <CardContent>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Ingredients</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1.5"><ShoppingBasket className="size-4 text-primary/60" />Ingredients</h2>
           <ul className="space-y-1.5">
             {recipe.ingredients.map((ing, i) => (
               <li key={i} className="text-sm flex items-baseline gap-2">
@@ -132,7 +132,7 @@ export default function RecipeDetailPage() {
       {recipe.instructions && (
         <Card className="mt-4">
           <CardContent>
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Instructions</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1.5"><ChefHat className="size-4 text-primary/60" />Instructions</h2>
             <div className="text-sm leading-relaxed whitespace-pre-wrap">{recipe.instructions}</div>
           </CardContent>
         </Card>
@@ -141,7 +141,7 @@ export default function RecipeDetailPage() {
       {recipe.notes && (
         <Card className="mt-4">
           <CardContent>
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">Notes</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1.5"><NotebookPen className="size-4 text-primary/60" />Notes</h2>
             <div className="text-sm leading-relaxed whitespace-pre-wrap">{recipe.notes}</div>
           </CardContent>
         </Card>
@@ -149,7 +149,7 @@ export default function RecipeDetailPage() {
 
       {recipe.source_url && (
         <div className="mt-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2">Source</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5"><Link2 className="size-4 text-primary/60" />Source</h2>
           <a
             href={recipe.source_url}
             target="_blank"

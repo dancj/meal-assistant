@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import RecipeForm from "@/components/RecipeForm";
 import type { RecipeFormData } from "@/components/RecipeForm";
 
@@ -28,11 +29,12 @@ export default function NewRecipePage() {
     <div>
       <Link
         href="/"
-        className="text-sm text-foreground/60 hover:text-foreground transition-colors"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
-        &larr; Back to recipes
+        <ChevronLeft className="size-4" />
+        Back to recipes
       </Link>
-      <h1 className="text-2xl font-bold mt-4 mb-6">Add Recipe</h1>
+      <h1 className="text-2xl font-bold tracking-tight mt-4 mb-6">Add Recipe</h1>
       <RecipeForm onSubmit={handleSubmit} submitLabel="Add Recipe" />
     </div>
   );

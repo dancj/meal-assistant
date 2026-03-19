@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
+import { Plus, UtensilsCrossed } from "lucide-react";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,15 +29,18 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <header className="border-b border-black/10 dark:border-white/10">
+        <header className="border-b border-primary/15 bg-background/80 backdrop-blur-sm sticky top-0 z-10">
           <nav className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
-            <Link href="/" className="font-semibold text-lg">
+            <Link href="/" className="flex items-center gap-2 font-semibold text-lg hover:opacity-80 transition-opacity">
+              <UtensilsCrossed className="size-5 text-primary" />
               Meal Assistant
             </Link>
             <Link
               href="/recipes/new"
-              className="bg-foreground text-background px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+              className="inline-flex shrink-0 items-center justify-center gap-1 rounded-lg bg-primary text-primary-foreground h-7 px-2.5 text-[0.8rem] font-medium hover:bg-primary/80 transition-all"
+              data-testid="add-recipe-link"
             >
+              <Plus className="size-3.5" />
               Add Recipe
             </Link>
           </nav>

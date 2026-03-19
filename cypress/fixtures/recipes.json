@@ -1,0 +1,115 @@
+[
+  {
+    "id": "r1-chicken-stir-fry",
+    "name": "Chicken Stir Fry",
+    "ingredients": [
+      { "name": "chicken breast", "quantity": "1", "unit": "lb" },
+      { "name": "soy sauce", "quantity": "3", "unit": "tbsp" },
+      { "name": "broccoli", "quantity": "2", "unit": "cups" },
+      { "name": "rice", "quantity": "1", "unit": "cup" }
+    ],
+    "instructions": "1. Cut chicken into pieces.\n2. Stir fry with vegetables.\n3. Add soy sauce.\n4. Serve over rice.",
+    "tags": ["dinner", "quick", "asian"],
+    "servings": 4,
+    "prep_time": 10,
+    "cook_time": 15,
+    "source_url": null,
+    "notes": null,
+    "created_at": "2026-03-01T12:00:00Z",
+    "updated_at": "2026-03-01T12:00:00Z"
+  },
+  {
+    "id": "r2-pasta-carbonara",
+    "name": "Pasta Carbonara",
+    "ingredients": [
+      { "name": "spaghetti", "quantity": "1", "unit": "lb" },
+      { "name": "bacon", "quantity": "6", "unit": "slices" },
+      { "name": "eggs", "quantity": "3", "unit": "" },
+      { "name": "parmesan cheese", "quantity": "1", "unit": "cup" }
+    ],
+    "instructions": "1. Cook pasta.\n2. Fry bacon.\n3. Mix eggs and cheese.\n4. Toss everything together.",
+    "tags": ["dinner", "italian", "comfort"],
+    "servings": 4,
+    "prep_time": 5,
+    "cook_time": 20,
+    "source_url": "https://example.com/carbonara",
+    "notes": "Use guanciale for authentic version.",
+    "created_at": "2026-03-02T12:00:00Z",
+    "updated_at": "2026-03-02T12:00:00Z"
+  },
+  {
+    "id": "r3-vegetable-soup",
+    "name": "Vegetable Soup",
+    "ingredients": [
+      { "name": "carrots", "quantity": "3", "unit": "" },
+      { "name": "celery", "quantity": "3", "unit": "stalks" },
+      { "name": "potatoes", "quantity": "2", "unit": "" },
+      { "name": "vegetable broth", "quantity": "4", "unit": "cups" }
+    ],
+    "instructions": "1. Chop vegetables.\n2. Simmer in broth for 30 minutes.",
+    "tags": ["dinner", "vegetarian", "healthy"],
+    "servings": 6,
+    "prep_time": 15,
+    "cook_time": 30,
+    "source_url": null,
+    "notes": null,
+    "created_at": "2026-03-03T12:00:00Z",
+    "updated_at": "2026-03-03T12:00:00Z"
+  },
+  {
+    "id": "r4-beef-tacos",
+    "name": "Beef Tacos",
+    "ingredients": [
+      { "name": "ground beef", "quantity": "1", "unit": "lb" },
+      { "name": "taco shells", "quantity": "8", "unit": "" },
+      { "name": "lettuce", "quantity": "1", "unit": "head" },
+      { "name": "cheese", "quantity": "1", "unit": "cup" }
+    ],
+    "instructions": "1. Brown the beef.\n2. Season with taco spices.\n3. Assemble tacos.",
+    "tags": ["dinner", "mexican", "quick"],
+    "servings": 4,
+    "prep_time": 5,
+    "cook_time": 10,
+    "source_url": null,
+    "notes": null,
+    "created_at": "2026-03-04T12:00:00Z",
+    "updated_at": "2026-03-04T12:00:00Z"
+  },
+  {
+    "id": "r5-salmon-teriyaki",
+    "name": "Salmon Teriyaki",
+    "ingredients": [
+      { "name": "salmon fillets", "quantity": "4", "unit": "" },
+      { "name": "teriyaki sauce", "quantity": "0.5", "unit": "cup" },
+      { "name": "rice", "quantity": "2", "unit": "cups" }
+    ],
+    "instructions": "1. Marinate salmon.\n2. Bake at 400F for 15 minutes.\n3. Serve with rice.",
+    "tags": ["dinner", "asian", "healthy"],
+    "servings": 4,
+    "prep_time": 10,
+    "cook_time": 15,
+    "source_url": null,
+    "notes": null,
+    "created_at": "2026-03-05T12:00:00Z",
+    "updated_at": "2026-03-05T12:00:00Z"
+  },
+  {
+    "id": "r6-margherita-pizza",
+    "name": "Margherita Pizza",
+    "ingredients": [
+      { "name": "pizza dough", "quantity": "1", "unit": "ball" },
+      { "name": "tomato sauce", "quantity": "0.5", "unit": "cup" },
+      { "name": "mozzarella", "quantity": "8", "unit": "oz" },
+      { "name": "basil", "quantity": "1", "unit": "bunch" }
+    ],
+    "instructions": "1. Roll out dough.\n2. Spread sauce.\n3. Top with cheese and basil.\n4. Bake at 475F for 12 minutes.",
+    "tags": ["dinner", "italian"],
+    "servings": 2,
+    "prep_time": 20,
+    "cook_time": 12,
+    "source_url": null,
+    "notes": null,
+    "created_at": "2026-03-06T12:00:00Z",
+    "updated_at": "2026-03-06T12:00:00Z"
+  }
+]

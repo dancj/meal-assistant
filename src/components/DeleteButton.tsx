@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function DeleteButton({ recipeId }: { recipeId: string }) {
   const router = useRouter();
@@ -25,12 +27,15 @@ export default function DeleteButton({ recipeId }: { recipeId: string }) {
   }
 
   return (
-    <button
+    <Button
+      variant="destructive"
+      size="sm"
       onClick={handleDelete}
       disabled={deleting}
-      className="text-sm text-red-600 dark:text-red-400 hover:underline disabled:opacity-50"
+      data-testid="delete-btn"
     >
+      <Trash2 className="size-3.5" data-icon="inline-start" />
       {deleting ? "Deleting..." : "Delete"}
-    </button>
+    </Button>
   );
 }

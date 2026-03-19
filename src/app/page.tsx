@@ -1,22 +1,48 @@
-import { getSupabase } from "@/lib/supabase";
+"use client";
+
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 import RecipeList from "@/components/RecipeList";
 import type { Recipe } from "@/types/recipe";
 
-export const dynamic = "force-dynamic";
+export default function Home() {
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export default async function Home() {
-  const { data: recipes, error } = await getSupabase()
-    .from("recipes")
-    .select("*")
-    .order("created_at", { ascending: false });
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch("/api/recipes");
+        if (!res.ok) {
+          setError("Failed to load recipes. Please try again later.");
+          return;
+        }
+        setRecipes(await res.json());
+      } catch {
+        setError("Failed to load recipes. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="size-6 text-primary/60 animate-spin" />
+      </div>
+    );
+  }
 
   if (error) {
     return (
-      <p className="text-center py-8 text-red-600 dark:text-red-400">
-        Failed to load recipes. Please try again later.
+      <p className="text-center py-12 text-destructive">
+        {error}
       </p>
     );
   }
 
-  return <RecipeList recipes={(recipes as Recipe[]) ?? []} />;
+  return <RecipeList recipes={recipes} />;
 }

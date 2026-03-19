@@ -1,47 +1,82 @@
-import { notFound } from "next/navigation";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
-import { getSupabase } from "@/lib/supabase";
+import { ChevronLeft, Pencil, Clock, Users, Loader2, ShoppingBasket, ChefHat, NotebookPen, Link2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import DeleteButton from "@/components/DeleteButton";
 import type { Recipe } from "@/types/recipe";
 
-export const dynamic = "force-dynamic";
+export default function RecipeDetailPage() {
+  const params = useParams<{ id: string }>();
+  const [recipe, setRecipe] = useState<Recipe | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export default async function RecipeDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch(`/api/recipes/${params.id}`);
+        if (res.status === 404) {
+          setError("Recipe not found");
+          return;
+        }
+        if (!res.ok) {
+          setError("Failed to load recipe");
+          return;
+        }
+        setRecipe(await res.json());
+      } catch {
+        setError("Failed to load recipe");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [params.id]);
 
-  const { data, error } = await getSupabase()
-    .from("recipes")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (error || !data) {
-    notFound();
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="size-6 text-primary/60 animate-spin" />
+      </div>
+    );
   }
 
-  const recipe = data as Recipe;
+  if (error || !recipe) {
+    return (
+      <div className="text-center py-16">
+        <p className="text-destructive mb-4">{error ?? "Recipe not found"}</p>
+        <Link href="/" className={buttonVariants({ variant: "outline", size: "sm" })}>
+          Back to recipes
+        </Link>
+      </div>
+    );
+  }
 
   return (
-    <div>
+    <div data-testid="recipe-detail">
       <Link
         href="/"
-        className="text-sm text-foreground/60 hover:text-foreground transition-colors"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
-        &larr; Back to recipes
+        <ChevronLeft className="size-4" />
+        Back to recipes
       </Link>
 
-      <div className="mt-4">
+      <div className="mt-6">
         <div className="flex items-start justify-between gap-4">
-          <h1 className="text-2xl font-bold">{recipe.name}</h1>
-          <div className="flex gap-3 shrink-0">
+          <h1 className="text-2xl font-bold tracking-tight">{recipe.name}</h1>
+          <div className="flex gap-2 shrink-0">
             <Link
               href={`/recipes/${recipe.id}/edit`}
-              className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+              data-testid="edit-btn"
             >
+              <Pencil className="size-3.5" data-icon="inline-start" />
               Edit
             </Link>
             <DeleteButton recipeId={recipe.id} />
@@ -51,60 +86,79 @@ export default async function RecipeDetailPage({
         {recipe.tags.length > 0 && (
           <div className="flex gap-1.5 mt-3">
             {recipe.tags.map((tag) => (
-              <span
-                key={tag}
-                className="bg-black/5 dark:bg-white/10 px-2 py-0.5 rounded text-xs"
-              >
+              <Badge key={tag} variant="secondary">
                 {tag}
-              </span>
+              </Badge>
             ))}
           </div>
         )}
 
-        <div className="flex gap-4 mt-4 text-sm text-foreground/60">
-          {recipe.servings && <span>{recipe.servings} servings</span>}
-          {recipe.prep_time != null && <span>{recipe.prep_time} min prep</span>}
-          {recipe.cook_time != null && <span>{recipe.cook_time} min cook</span>}
+        <div className="flex gap-4 mt-4 text-sm text-muted-foreground">
+          {recipe.servings && (
+            <span className="inline-flex items-center gap-1">
+              <Users className="size-3.5" />
+              {recipe.servings} servings
+            </span>
+          )}
+          {recipe.prep_time != null && (
+            <span className="inline-flex items-center gap-1">
+              <Clock className="size-3.5" />
+              {recipe.prep_time} min prep
+            </span>
+          )}
+          {recipe.cook_time != null && (
+            <span className="inline-flex items-center gap-1">
+              <Clock className="size-3.5" />
+              {recipe.cook_time} min cook
+            </span>
+          )}
         </div>
       </div>
 
-      <section className="mt-8">
-        <h2 className="text-lg font-semibold mb-3">Ingredients</h2>
-        <ul className="space-y-1">
-          {recipe.ingredients.map((ing, i) => (
-            <li key={i} className="text-sm">
-              {[ing.quantity, ing.unit, ing.name].filter(Boolean).join(" ")}
-            </li>
-          ))}
-        </ul>
-      </section>
+      <Card className="mt-8">
+        <CardContent>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1.5"><ShoppingBasket className="size-4 text-primary/60" />Ingredients</h2>
+          <ul className="space-y-1.5">
+            {recipe.ingredients.map((ing, i) => (
+              <li key={i} className="text-sm flex items-baseline gap-2">
+                <span className="size-1.5 rounded-full bg-primary/30 shrink-0 mt-1.5" />
+                {[ing.quantity, ing.unit, ing.name].filter(Boolean).join(" ")}
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
 
       {recipe.instructions && (
-        <section className="mt-8">
-          <h2 className="text-lg font-semibold mb-3">Instructions</h2>
-          <div className="text-sm whitespace-pre-wrap">{recipe.instructions}</div>
-        </section>
+        <Card className="mt-4">
+          <CardContent>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1.5"><ChefHat className="size-4 text-primary/60" />Instructions</h2>
+            <div className="text-sm leading-relaxed whitespace-pre-wrap">{recipe.instructions}</div>
+          </CardContent>
+        </Card>
       )}
 
       {recipe.notes && (
-        <section className="mt-8">
-          <h2 className="text-lg font-semibold mb-3">Notes</h2>
-          <div className="text-sm whitespace-pre-wrap">{recipe.notes}</div>
-        </section>
+        <Card className="mt-4">
+          <CardContent>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1.5"><NotebookPen className="size-4 text-primary/60" />Notes</h2>
+            <div className="text-sm leading-relaxed whitespace-pre-wrap">{recipe.notes}</div>
+          </CardContent>
+        </Card>
       )}
 
       {recipe.source_url && (
-        <section className="mt-8">
-          <h2 className="text-lg font-semibold mb-3">Source</h2>
+        <div className="mt-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5"><Link2 className="size-4 text-primary/60" />Source</h2>
           <a
             href={recipe.source_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-blue-600 dark:text-blue-400 hover:underline break-all"
+            className="text-sm text-primary hover:underline break-all"
           >
             {recipe.source_url}
           </a>
-        </section>
+        </div>
       )}
     </div>
   );

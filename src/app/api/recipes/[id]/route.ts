@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { pickRecipeFields, validateRecipeBody } from "@/lib/recipe-validation";
+import { isDemoMode, demoStore } from "@/lib/demo-mode";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,17 @@ export async function GET(
       { error: "Invalid recipe ID format" },
       { status: 400 }
     );
+  }
+
+  if (isDemoMode()) {
+    const recipe = demoStore.getRecipe(id);
+    if (!recipe) {
+      return NextResponse.json(
+        { error: "Recipe not found" },
+        { status: 404 }
+      );
+    }
+    return NextResponse.json(recipe);
   }
 
   const { data, error } = await getSupabase()
@@ -71,14 +83,22 @@ export async function PUT(
     return NextResponse.json({ error: validationError }, { status: 400 });
   }
 
-  const recipeData = {
-    ...pickRecipeFields(body),
-    updated_at: new Date().toISOString(),
-  };
+  const recipeData = pickRecipeFields(body);
+
+  if (isDemoMode()) {
+    const updated = demoStore.updateRecipe(id, recipeData);
+    if (!updated) {
+      return NextResponse.json(
+        { error: "Recipe not found" },
+        { status: 404 }
+      );
+    }
+    return NextResponse.json(updated);
+  }
 
   const { data, error } = await getSupabase()
     .from("recipes")
-    .update(recipeData)
+    .update({ ...recipeData, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
     .single();
@@ -111,6 +131,17 @@ export async function DELETE(
       { error: "Invalid recipe ID format" },
       { status: 400 }
     );
+  }
+
+  if (isDemoMode()) {
+    const deleted = demoStore.deleteRecipe(id);
+    if (!deleted) {
+      return NextResponse.json(
+        { error: "Recipe not found" },
+        { status: 404 }
+      );
+    }
+    return new NextResponse(null, { status: 204 });
   }
 
   const { data, error } = await getSupabase()

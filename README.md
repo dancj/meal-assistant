@@ -1,23 +1,33 @@
 # Meal Assistant
 
-Automatically generate a weekly meal plan (5 dinners + grocery list) from your own recipes and deliver it via email — all using free-tier services.
+Automatically generate a weekly meal plan (5 dinners + grocery list) from your household's recipes and deliver it via email — all using free-tier services.
 
 ## Tech Stack
 
-- **Frontend:** Next.js + React + TypeScript (hosted on Vercel, free tier)
-- **Backend:** Next.js API routes (serverless)
-- **Storage:** [Supabase](https://supabase.com) (Postgres, free tier)
-- **AI Meal Planning:** [Google Gemini](https://ai.google.dev) (free tier)
-- **Email Delivery:** [Resend](https://resend.com) (free tier)
-- **Automation:** GitHub Actions (weekly cron schedule)
+- **Framework:** [Next.js 15](https://nextjs.org) (App Router) + React 19 + TypeScript
+- **Hosting:** [Vercel](https://vercel.com) (free tier)
+- **Database:** [Supabase](https://supabase.com) (Postgres, free tier) — recipe storage
+- **AI:** [Google Gemini](https://ai.google.dev) (free tier) — meal plan generation
+- **Email:** [Resend](https://resend.com) (free tier) — meal plan delivery
+- **Automation:** GitHub Actions (weekly cron + manual trigger)
+- **Styling:** Tailwind CSS v4
 
 ## How It Works
 
-1. A GitHub Action triggers weekly (or you trigger on-demand).
-2. It calls the Vercel-hosted API route `/api/generate-plan`.
+1. A GitHub Action triggers weekly (or you trigger manually / on-demand).
+2. It calls the Vercel-hosted API route `POST /api/generate-plan`.
 3. The API fetches your recipes from Supabase.
-4. Recipes and dietary preferences are sent to Google Gemini, which generates a 5-dinner meal plan with a consolidated grocery list.
-5. The plan is emailed to your household via Resend.
+4. Recipes and dietary preferences are sent to Google Gemini, which returns a structured JSON meal plan: 5 dinners for Mon–Fri plus a consolidated grocery list.
+5. The plan is automatically emailed to your household via Resend.
+
+## Features
+
+- **Recipe Management** — Add, edit, delete, and browse recipes through the web UI. Search by name and filter by tags.
+- **AI Meal Planning** — Gemini selects 5 varied dinners from your recipe pool, respecting dietary preferences.
+- **Dietary Preferences** — Pass household-level or per-person dietary constraints (e.g., "no shellfish", "kid: vegetarian alternative"). See [Dietary Preferences](#dietary-preferences) below.
+- **Grocery List** — Auto-generated, deduplicated grocery list combining ingredients from all selected recipes.
+- **Email Delivery** — Formatted HTML email with dinner cards and grocery checklist.
+- **Automated Schedule** — Weekly GitHub Actions cron job, plus manual trigger from GitHub UI.
 
 ## Getting Started
 
@@ -39,12 +49,42 @@ Automatically generate a weekly meal plan (5 dinners + grocery list) from your o
     EMAIL_FROM=onboarding@resend.dev
     EMAIL_RECIPIENTS=you@example.com
     CRON_SECRET=a-random-secret-string
+    DIETARY_PREFERENCES="No shellfish. Kid: vegetarian alternative, fallback to pasta."
     ```
 4. Run the development server:
     ```bash
     npm run dev
     ```
-5. Deploy to Vercel for production.
+5. Open [http://localhost:3000](http://localhost:3000) to manage recipes and view the app.
+6. Deploy to Vercel for production.
+
+## Dietary Preferences
+
+Dietary preferences are passed as a plain-text string to the Gemini prompt during meal plan generation. There are two ways to set them:
+
+### Via environment variable (recommended for automated runs)
+
+Set `DIETARY_PREFERENCES` in your `.env.local` (or Vercel environment variables):
+
+```env
+DIETARY_PREFERENCES="No shellfish. Kid: vegetarian alternative, fallback to pasta."
+```
+
+This is used automatically by the GitHub Actions cron job and as the default when no preferences are provided in the API call.
+
+### Via API request body
+
+When calling `POST /api/generate-plan`, you can pass preferences in the request body to override the default:
+
+```json
+{
+  "preferences": "No red meat this week. Extra vegetables."
+}
+```
+
+If neither is provided, the meal plan is generated with no dietary restrictions.
+
+> **Tip:** Preferences are free-form text (max 500 characters). You can include household-level rules, per-person constraints, or weekly overrides. Gemini interprets them contextually.
 
 > **Note:** Resend's free tier sends from `onboarding@resend.dev`, which only delivers to the account owner's email. To send to other household members, [verify a custom domain](https://resend.com/docs/dashboard/domains/introduction) in Resend.
 

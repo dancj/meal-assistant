@@ -189,7 +189,7 @@ export async function POST(request: Request) {
   // 6. Build prompt
   const recipesText = formatRecipesForPrompt(recipes as Recipe[]);
   const preferencesText =
-    preferences || "No specific dietary restrictions";
+    preferences || process.env.DIETARY_PREFERENCES || "No specific dietary restrictions";
   const userMessage = `Recipes available:\n${recipesText}\n\nDietary preferences: ${preferencesText}\n\nSelect 5 dinners for the week of ${weekOf} and generate the grocery list.`;
 
   // 7. Call Gemini

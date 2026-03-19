@@ -1,32 +1,56 @@
-import { notFound } from "next/navigation";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
-import { getSupabase } from "@/lib/supabase";
 import DeleteButton from "@/components/DeleteButton";
 import type { Recipe } from "@/types/recipe";
 
-export const dynamic = "force-dynamic";
+export default function RecipeDetailPage() {
+  const params = useParams<{ id: string }>();
+  const [recipe, setRecipe] = useState<Recipe | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export default async function RecipeDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch(`/api/recipes/${params.id}`);
+        if (res.status === 404) {
+          setError("Recipe not found");
+          return;
+        }
+        if (!res.ok) {
+          setError("Failed to load recipe");
+          return;
+        }
+        setRecipe(await res.json());
+      } catch {
+        setError("Failed to load recipe");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [params.id]);
 
-  const { data, error } = await getSupabase()
-    .from("recipes")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (error || !data) {
-    notFound();
+  if (loading) {
+    return <p className="text-center py-8 text-foreground/60">Loading...</p>;
   }
 
-  const recipe = data as Recipe;
+  if (error || !recipe) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600 dark:text-red-400 mb-4">{error ?? "Recipe not found"}</p>
+        <Link href="/" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+          Back to recipes
+        </Link>
+      </div>
+    );
+  }
 
   return (
-    <div>
+    <div data-testid="recipe-detail">
       <Link
         href="/"
         className="text-sm text-foreground/60 hover:text-foreground transition-colors"
@@ -41,6 +65,7 @@ export default async function RecipeDetailPage({
             <Link
               href={`/recipes/${recipe.id}/edit`}
               className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+              data-testid="edit-btn"
             >
               Edit
             </Link>

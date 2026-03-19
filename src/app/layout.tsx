@@ -36,6 +36,7 @@ export default function RootLayout({
             <Link
               href="/recipes/new"
               className="bg-foreground text-background px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+              data-testid="add-recipe-link"
             >
               Add Recipe
             </Link>

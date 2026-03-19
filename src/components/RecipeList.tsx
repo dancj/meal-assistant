@@ -27,7 +27,7 @@ export default function RecipeList({ recipes }: { recipes: Recipe[] }) {
 
   if (recipes.length === 0) {
     return (
-      <div className="text-center py-16">
+      <div className="text-center py-16" data-testid="empty-state">
         <p className="text-lg text-foreground/60 mb-4">No recipes yet</p>
         <Link
           href="/recipes/new"
@@ -49,6 +49,7 @@ export default function RecipeList({ recipes }: { recipes: Recipe[] }) {
           placeholder="Search recipes..."
           className="w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
           aria-label="Search recipes"
+          data-testid="search-input"
         />
         {allTags.length > 0 && (
           <div className="flex flex-wrap gap-2">
@@ -61,6 +62,7 @@ export default function RecipeList({ recipes }: { recipes: Recipe[] }) {
                     ? "bg-foreground text-background"
                     : "bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15"
                 }`}
+                data-testid={`tag-filter-${tag}`}
               >
                 {tag}
               </button>
@@ -80,6 +82,7 @@ export default function RecipeList({ recipes }: { recipes: Recipe[] }) {
               key={recipe.id}
               href={`/recipes/${recipe.id}`}
               className="block rounded-lg border border-black/10 dark:border-white/10 p-4 hover:bg-black/[.02] dark:hover:bg-white/[.02] transition-colors"
+              data-testid="recipe-list-item"
             >
               <div className="flex items-center justify-between">
                 <h2 className="font-medium">{recipe.name}</h2>

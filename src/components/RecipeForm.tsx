@@ -112,7 +112,7 @@ export default function RecipeForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+        <div className="rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400" data-testid="form-error">
           {error}
         </div>
       )}
@@ -128,6 +128,7 @@ export default function RecipeForm({
           onChange={(e) => setName(e.target.value)}
           className={inputClass}
           placeholder="e.g. Chicken Stir Fry"
+          data-testid="recipe-name-input"
         />
       </div>
 
@@ -138,13 +139,14 @@ export default function RecipeForm({
             type="button"
             onClick={addIngredient}
             className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            data-testid="add-ingredient-btn"
           >
             + Add ingredient
           </button>
         </div>
         <div className="space-y-2">
           {ingredients.map((ing, i) => (
-            <div key={i} className="flex gap-2 items-start">
+            <div key={i} className="flex gap-2 items-start" data-testid="ingredient-row">
               <input
                 type="text"
                 value={ing.name}
@@ -175,6 +177,7 @@ export default function RecipeForm({
                 disabled={ingredients.length <= 1}
                 className="px-2 py-2 text-sm text-red-500 hover:text-red-700 disabled:opacity-30 disabled:cursor-not-allowed"
                 aria-label={`Remove ingredient ${i + 1}`}
+                data-testid="remove-ingredient-btn"
               >
                 &times;
               </button>
@@ -222,6 +225,7 @@ export default function RecipeForm({
             value={servings}
             onChange={(e) => setServings(e.target.value)}
             className={inputClass}
+            data-testid="recipe-servings-input"
           />
         </div>
         <div>
@@ -284,6 +288,7 @@ export default function RecipeForm({
           type="submit"
           disabled={submitting}
           className="bg-foreground text-background px-5 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+          data-testid="submit-btn"
         >
           {submitting ? "Saving..." : submitLabel}
         </button>

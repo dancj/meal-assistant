@@ -40,7 +40,7 @@ Automatically generate a weekly meal plan (5 dinners + grocery list) from your h
     ```bash
     npm install
     ```
-3. Create a `.env.local` file (see `sample.env.local`):
+3. Create a `.env.local` file (see `.env.example`):
     ```env
     SUPABASE_URL=your-supabase-project-url
     SUPABASE_SERVICE_ROLE_KEY=your-service-role-key

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { ChevronLeft, Loader2 } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import RecipeForm from "@/components/RecipeForm";
 import type { RecipeFormData } from "@/components/RecipeForm";
 import type { Recipe } from "@/types/recipe";
@@ -49,14 +51,18 @@ export default function EditRecipePage() {
   }
 
   if (loading) {
-    return <p className="text-center py-8 text-foreground/60">Loading...</p>;
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="size-6 text-muted-foreground animate-spin" />
+      </div>
+    );
   }
 
   if (error || !recipe) {
     return (
-      <div className="text-center py-8">
-        <p className="text-red-600 dark:text-red-400 mb-4">{error ?? "Recipe not found"}</p>
-        <Link href="/" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+      <div className="text-center py-16">
+        <p className="text-destructive mb-4">{error ?? "Recipe not found"}</p>
+        <Link href="/" className={buttonVariants({ variant: "outline", size: "sm" })}>
           Back to recipes
         </Link>
       </div>
@@ -67,11 +73,12 @@ export default function EditRecipePage() {
     <div>
       <Link
         href={`/recipes/${params.id}`}
-        className="text-sm text-foreground/60 hover:text-foreground transition-colors"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
-        &larr; Back to recipe
+        <ChevronLeft className="size-4" />
+        Back to recipe
       </Link>
-      <h1 className="text-2xl font-bold mt-4 mb-6">Edit Recipe</h1>
+      <h1 className="text-2xl font-bold tracking-tight mt-4 mb-6">Edit Recipe</h1>
       <RecipeForm
         initialData={recipe}
         onSubmit={handleSubmit}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 import RecipeList from "@/components/RecipeList";
 import type { Recipe } from "@/types/recipe";
 
@@ -28,12 +29,16 @@ export default function Home() {
   }, []);
 
   if (loading) {
-    return <p className="text-center py-8 text-foreground/60">Loading...</p>;
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="size-6 text-muted-foreground animate-spin" />
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <p className="text-center py-8 text-red-600 dark:text-red-400">
+      <p className="text-center py-12 text-destructive">
         {error}
       </p>
     );

@@ -73,7 +73,7 @@ describe("RecipeForm", () => {
     expect(screen.getByLabelText("Ingredient 1 name")).toBeInTheDocument();
 
     // Add a row
-    await userEvent.click(screen.getByText("+ Add ingredient"));
+    await userEvent.click(screen.getByText("Add ingredient"));
     expect(screen.getByLabelText("Ingredient 2 name")).toBeInTheDocument();
 
     // Remove the second row

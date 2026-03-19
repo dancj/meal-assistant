@@ -41,7 +41,7 @@ describe("RecipeList", () => {
   it("shows empty state when no recipes", () => {
     render(<RecipeList recipes={[]} />);
     expect(screen.getByText("No recipes yet")).toBeInTheDocument();
-    expect(screen.getByText("Add your first recipe")).toBeInTheDocument();
+    expect(screen.getByTestId("empty-state")).toBeInTheDocument();
   });
 
   it("renders recipe cards", () => {

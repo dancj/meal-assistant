@@ -4,6 +4,12 @@ import { getAI } from "@/lib/gemini";
 import { Type } from "@google/genai";
 import type { Recipe } from "@/types/recipe";
 import type { MealPlan } from "@/types/meal-plan";
+import {
+  isDemoMode,
+  isGeminiAvailable,
+  demoStore,
+  generateDemoMealPlan,
+} from "@/lib/demo-mode";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -132,12 +138,18 @@ function validateMealPlan(
 }
 
 export async function POST(request: Request) {
-  // 1. Validate auth
-  const authHeader = request.headers.get("authorization");
-  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const demo = isDemoMode();
 
-  if (token !== process.env.CRON_SECRET) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // 1. Validate auth (skip in demo mode)
+  if (!demo) {
+    const authHeader = request.headers.get("authorization");
+    const token = authHeader?.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : null;
+
+    if (token !== process.env.CRON_SECRET) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   // 2. Parse optional body
@@ -160,38 +172,51 @@ export async function POST(request: Request) {
   }
 
   // 3. Fetch recipes
-  const { data: recipes, error } = await getSupabase()
-    .from("recipes")
-    .select("*");
+  let recipes: Recipe[];
 
-  if (error) {
-    console.error("Failed to fetch recipes:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch recipes" },
-      { status: 500 }
-    );
+  if (demo) {
+    recipes = demoStore.listRecipes();
+  } else {
+    const { data, error } = await getSupabase()
+      .from("recipes")
+      .select("*");
+
+    if (error) {
+      console.error("Failed to fetch recipes:", error);
+      return NextResponse.json(
+        { error: "Failed to fetch recipes" },
+        { status: 500 }
+      );
+    }
+
+    recipes = (data ?? []) as Recipe[];
   }
 
   // 4. Check minimum count
-  if (!recipes || recipes.length < 5) {
+  if (recipes.length < 5) {
     return NextResponse.json(
       {
-        error: `Not enough recipes. Found ${recipes?.length ?? 0}, need at least 5.`,
+        error: `Not enough recipes. Found ${recipes.length}, need at least 5.`,
       },
       { status: 400 }
     );
   }
 
-  // 5. Calculate weekOf
+  // 5. If Gemini is not available, return a demo plan
+  if (!isGeminiAvailable()) {
+    const plan = generateDemoMealPlan();
+    return NextResponse.json({ success: true, plan, demo: true });
+  }
+
+  // 6. Calculate weekOf
   const weekOf = getNextMonday();
 
-  // 6. Build prompt
-  const recipesText = formatRecipesForPrompt(recipes as Recipe[]);
-  const preferencesText =
-    preferences || "No specific dietary restrictions";
+  // 7. Build prompt
+  const recipesText = formatRecipesForPrompt(recipes);
+  const preferencesText = preferences || "No specific dietary restrictions";
   const userMessage = `Recipes available:\n${recipesText}\n\nDietary preferences: ${preferencesText}\n\nSelect 5 dinners for the week of ${weekOf} and generate the grocery list.`;
 
-  // 7. Call Gemini
+  // 8. Call Gemini
   let response;
   try {
     response = await getAI().models.generateContent({
@@ -211,7 +236,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // 8. Parse + validate response
+  // 9. Parse + validate response
   const responseText = response.text;
   if (!responseText) {
     console.error("Failed to generate meal plan: empty response");
@@ -232,7 +257,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const recipeIds = new Set((recipes as Recipe[]).map((r) => r.id));
+  const recipeIds = new Set(recipes.map((r) => r.id));
   const validationError = validateMealPlan(plan, recipeIds);
   if (validationError) {
     console.error("Failed to generate a valid meal plan:", validationError);
@@ -242,9 +267,9 @@ export async function POST(request: Request) {
     );
   }
 
-  // 9. Override weekOf with server-computed value
+  // 10. Override weekOf with server-computed value
   plan.weekOf = weekOf;
 
-  // 10. Return
+  // 11. Return
   return NextResponse.json({ success: true, plan });
 }

@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
 import { pickRecipeFields, validateRecipeBody } from "@/lib/recipe-validation";
+import { isDemoMode, demoStore } from "@/lib/demo-mode";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  if (isDemoMode()) {
+    return NextResponse.json(demoStore.listRecipes());
+  }
+
   const { data, error } = await getSupabase()
     .from("recipes")
     .select("*")
@@ -38,6 +43,11 @@ export async function POST(request: Request) {
   }
 
   const recipeData = pickRecipeFields(body);
+
+  if (isDemoMode()) {
+    const recipe = demoStore.createRecipe(recipeData);
+    return NextResponse.json(recipe, { status: 201 });
+  }
 
   const { data, error } = await getSupabase()
     .from("recipes")

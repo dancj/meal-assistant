@@ -22,7 +22,7 @@ export default function DemoBanner() {
         <span>
           <strong>Demo mode</strong> — using sample data, no API keys required.
           Data resets on server restart.
-          See <code className="bg-amber-100 px-1 rounded text-xs">sample.env.local</code> to
+          See <code className="bg-amber-100 px-1 rounded text-xs">.env.example</code> to
           connect real services.
         </span>
       </div>

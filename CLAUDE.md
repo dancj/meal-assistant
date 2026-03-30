@@ -47,4 +47,4 @@ All source code lives under `src/` using the Next.js App Router convention:
 
 ### Environment Variables
 
-See `sample.env.local` for required keys: Supabase credentials, Gemini API key, Resend API key, email config, and CRON_SECRET for endpoint protection.
+See `.env.example` for required keys: Supabase credentials, Gemini API key, Resend API key, email config, and CRON_SECRET for endpoint protection.

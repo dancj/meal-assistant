@@ -12,6 +12,13 @@ vi.mock("@/lib/supabase", () => ({
   getSupabase: vi.fn(() => supabaseMock.mock),
 }));
 
+vi.mock("@/lib/demo-mode", () => ({
+  isDemoMode: vi.fn(() => false),
+  isGeminiAvailable: vi.fn(() => true),
+  demoStore: {},
+  generateDemoMealPlan: vi.fn(),
+}));
+
 vi.mock("@/lib/gemini", () => ({
   getAI: vi.fn(() => ({ models: { generateContent: generateContentMock } })),
 }));

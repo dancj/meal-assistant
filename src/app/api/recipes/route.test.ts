@@ -7,6 +7,11 @@ vi.mock("@/lib/supabase", () => ({
   getSupabase: vi.fn(() => supabaseMock.mock),
 }));
 
+vi.mock("@/lib/demo-mode", () => ({
+  isDemoMode: vi.fn(() => false),
+  demoStore: {},
+}));
+
 describe("GET /api/recipes", () => {
   beforeEach(() => {
     supabaseMock.reset();

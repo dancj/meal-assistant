@@ -171,6 +171,7 @@ export class SqliteRecipeRepository implements RecipeRepository {
       ...existing,
       ...data,
       id, // preserve
+      created_at: existing.created_at, // preserve
       updated_at: new Date().toISOString(),
     };
 

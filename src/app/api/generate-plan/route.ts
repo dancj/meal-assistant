@@ -193,12 +193,13 @@ export async function POST(request: Request) {
   // 5. If Gemini is not available, return a demo plan
   if (!isGeminiAvailable()) {
     const plan = generateDemoMealPlan(recipes);
-    const stored = await getMealPlanRepo().save(plan);
-    return NextResponse.json({
-      success: true,
-      plan: stored,
-      demo: true,
-    });
+    try {
+      const stored = await getMealPlanRepo().save(plan);
+      return NextResponse.json({ success: true, plan: stored, demo: true });
+    } catch (err) {
+      console.error("Failed to persist demo meal plan:", err);
+      return NextResponse.json({ success: true, plan, demo: true });
+    }
   }
 
   // 6. Calculate weekOf
@@ -264,7 +265,14 @@ export async function POST(request: Request) {
   plan.weekOf = weekOf;
 
   // 11. Persist plan
-  const stored = await getMealPlanRepo().save(plan);
+  let stored: { id: string; created_at: string } & MealPlan;
+  try {
+    stored = await getMealPlanRepo().save(plan);
+  } catch (err) {
+    console.error("Failed to persist meal plan:", err);
+    // Still return the plan even if persistence fails
+    stored = { ...plan, id: "", created_at: new Date().toISOString() };
+  }
 
   // 12. Send email
   let emailSent = false;

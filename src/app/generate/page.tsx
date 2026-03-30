@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, RefreshCw, ShoppingCart, UtensilsCrossed } from "lucide-react";
 import type { StoredMealPlan } from "@/lib/storage/types";
 
@@ -11,6 +11,14 @@ export default function GeneratePlanPage() {
   const [error, setError] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
   const [isDemo, setIsDemo] = useState(false);
+  const [needsAuth, setNeedsAuth] = useState(false);
+  const [secret, setSecret] = useState("");
+
+  // Check if auth is required by attempting a preflight
+  useEffect(() => {
+    const saved = localStorage.getItem("meal-assistant-secret");
+    if (saved) setSecret(saved);
+  }, []);
 
   async function handleGenerate() {
     setLoading(true);
@@ -20,18 +28,37 @@ export default function GeneratePlanPage() {
     setIsDemo(false);
 
     try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (secret) {
+        headers["Authorization"] = `Bearer ${secret}`;
+      }
+
       const res = await fetch("/api/generate-plan", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(
           preferences.trim() ? { preferences: preferences.trim() } : {}
         ),
       });
 
+      if (res.status === 401) {
+        setNeedsAuth(true);
+        setError("Authentication required. Enter the CRON_SECRET below.");
+        return;
+      }
+
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || `Request failed (${res.status})`);
       }
+
+      // Auth succeeded — save the secret for next time
+      if (secret) {
+        localStorage.setItem("meal-assistant-secret", secret);
+      }
+      setNeedsAuth(false);
 
       const data = await res.json();
       setPlan(data.plan);
@@ -68,6 +95,24 @@ export default function GeneratePlanPage() {
           maxLength={500}
           disabled={loading}
         />
+
+        {/* Auth secret input — shown when needed */}
+        {needsAuth && (
+          <div className="space-y-1">
+            <label htmlFor="secret" className="text-sm font-medium">
+              API Secret
+            </label>
+            <input
+              id="secret"
+              type="password"
+              value={secret}
+              onChange={(e) => setSecret(e.target.value)}
+              placeholder="Enter CRON_SECRET..."
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            />
+          </div>
+        )}
+
         <button
           onClick={handleGenerate}
           disabled={loading}

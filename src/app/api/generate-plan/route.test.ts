@@ -24,11 +24,16 @@ vi.mock("@/lib/storage", () => ({
   getMealPlanRepo: () => mockMealPlanRepo,
 }));
 
+const { isGeminiAvailableMock, generateDemoMealPlanMock } = vi.hoisted(() => ({
+  isGeminiAvailableMock: vi.fn(() => true),
+  generateDemoMealPlanMock: vi.fn(),
+}));
+
 vi.mock("@/lib/demo-mode", () => ({
   isDemoMode: vi.fn(() => false),
   isLocalMode: vi.fn(() => false),
-  isGeminiAvailable: vi.fn(() => true),
-  generateDemoMealPlan: vi.fn(),
+  isGeminiAvailable: isGeminiAvailableMock,
+  generateDemoMealPlan: generateDemoMealPlanMock,
 }));
 
 vi.mock("@/lib/gemini", () => ({
@@ -458,6 +463,84 @@ describe("POST /api/generate-plan", () => {
 
       expect(body.plan).toBeDefined();
       expect(body.plan.groceryList).toHaveLength(1);
+    });
+  });
+
+  describe("demo mode fallback (no Gemini)", () => {
+    const demoPlan = {
+      dinners: [
+        { day: "Monday", recipeName: "Pasta", recipeId: "id-1", servings: 4, alternativeNote: null },
+        { day: "Tuesday", recipeName: "Tacos", recipeId: "id-2", servings: 4, alternativeNote: null },
+        { day: "Wednesday", recipeName: "Stir Fry", recipeId: "id-3", servings: 4, alternativeNote: null },
+        { day: "Thursday", recipeName: "Soup", recipeId: "id-4", servings: 4, alternativeNote: null },
+        { day: "Friday", recipeName: "Salad", recipeId: "id-5", servings: 4, alternativeNote: null },
+      ],
+      groceryList: [{ item: "Ingredient", quantity: "5 cups" }],
+      weekOf: "2026-03-30",
+    };
+
+    beforeEach(() => {
+      isGeminiAvailableMock.mockReturnValue(false);
+      generateDemoMealPlanMock.mockReturnValue(demoPlan);
+      mockRecipeRepo.list.mockResolvedValue(FIVE_RECIPES);
+    });
+
+    afterEach(() => {
+      isGeminiAvailableMock.mockReturnValue(true);
+    });
+
+    it("returns demo plan with demo: true flag", async () => {
+      const response = await POST(postRequest());
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body.success).toBe(true);
+      expect(body.demo).toBe(true);
+      expect(body.plan.dinners).toHaveLength(5);
+    });
+
+    it("persists demo plan to storage", async () => {
+      await POST(postRequest());
+
+      expect(mockMealPlanRepo.save).toHaveBeenCalledOnce();
+    });
+
+    it("does not call Gemini or send email", async () => {
+      await POST(postRequest());
+
+      expect(generateContentMock).not.toHaveBeenCalled();
+      expect(sendMealPlanEmailMock).not.toHaveBeenCalled();
+    });
+
+    it("still returns plan when save fails", async () => {
+      mockMealPlanRepo.save.mockRejectedValue(new Error("db error"));
+
+      const response = await POST(postRequest());
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body.success).toBe(true);
+      expect(body.plan.dinners).toHaveLength(5);
+    });
+  });
+
+  describe("plan persistence failure", () => {
+    beforeEach(() => {
+      mockRecipeRepo.list.mockResolvedValue(FIVE_RECIPES);
+      generateContentMock.mockResolvedValue({
+        text: JSON.stringify(validMealPlanResponse()),
+      });
+    });
+
+    it("still returns plan when save fails after Gemini", async () => {
+      mockMealPlanRepo.save.mockRejectedValue(new Error("db error"));
+
+      const response = await POST(postRequest());
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body.success).toBe(true);
+      expect(body.plan.dinners).toHaveLength(5);
     });
   });
 });

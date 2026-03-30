@@ -7,6 +7,11 @@ vi.mock("@/lib/supabase", () => ({
   getSupabase: vi.fn(() => supabaseMock.mock),
 }));
 
+vi.mock("@/lib/demo-mode", () => ({
+  isDemoMode: vi.fn(() => false),
+  demoStore: {},
+}));
+
 const VALID_UUID = "550e8400-e29b-41d4-a716-446655440000";
 const INVALID_UUID = "not-a-uuid";
 

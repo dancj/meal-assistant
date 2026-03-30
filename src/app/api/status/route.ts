@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { isDemoMode, isGeminiAvailable } from "@/lib/demo-mode";
+import { isLocalMode, isGeminiAvailable } from "@/lib/demo-mode";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   return NextResponse.json({
-    demo: isDemoMode(),
+    demo: isLocalMode(),
+    local: isLocalMode(),
     geminiAvailable: isGeminiAvailable(),
   });
 }

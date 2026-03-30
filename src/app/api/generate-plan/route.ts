@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
 import { getAI } from "@/lib/gemini";
 import { sendMealPlanEmail } from "@/lib/email";
 import { Type } from "@google/genai";
 import type { Recipe } from "@/types/recipe";
 import type { MealPlan } from "@/types/meal-plan";
-import {
-  isDemoMode,
-  isGeminiAvailable,
-  demoStore,
-  generateDemoMealPlan,
-} from "@/lib/demo-mode";
+import { isGeminiAvailable } from "@/lib/demo-mode";
+import { getRecipeRepo, getMealPlanRepo } from "@/lib/storage";
+import { generateDemoMealPlan } from "@/lib/demo-mode";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -139,16 +135,15 @@ function validateMealPlan(
 }
 
 export async function POST(request: Request) {
-  const demo = isDemoMode();
-
-  // 1. Validate auth (skip in demo mode)
-  if (!demo) {
+  // 1. Validate auth (skip if CRON_SECRET is not configured)
+  const cronSecret = process.env.CRON_SECRET;
+  if (cronSecret) {
     const authHeader = request.headers.get("authorization");
     const token = authHeader?.startsWith("Bearer ")
       ? authHeader.slice(7)
       : null;
 
-    if (token !== process.env.CRON_SECRET) {
+    if (token !== cronSecret) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
   }
@@ -175,22 +170,14 @@ export async function POST(request: Request) {
   // 3. Fetch recipes
   let recipes: Recipe[];
 
-  if (demo) {
-    recipes = demoStore.listRecipes();
-  } else {
-    const { data, error } = await getSupabase()
-      .from("recipes")
-      .select("*");
-
-    if (error) {
-      console.error("Failed to fetch recipes:", error);
-      return NextResponse.json(
-        { error: "Failed to fetch recipes" },
-        { status: 500 }
-      );
-    }
-
-    recipes = (data ?? []) as Recipe[];
+  try {
+    recipes = await getRecipeRepo().list();
+  } catch (err) {
+    console.error("Failed to fetch recipes:", err);
+    return NextResponse.json(
+      { error: "Failed to fetch recipes" },
+      { status: 500 }
+    );
   }
 
   // 4. Check minimum count
@@ -205,8 +192,14 @@ export async function POST(request: Request) {
 
   // 5. If Gemini is not available, return a demo plan
   if (!isGeminiAvailable()) {
-    const plan = generateDemoMealPlan();
-    return NextResponse.json({ success: true, plan, demo: true });
+    const plan = generateDemoMealPlan(recipes);
+    try {
+      const stored = await getMealPlanRepo().save(plan);
+      return NextResponse.json({ success: true, plan: stored, demo: true });
+    } catch (err) {
+      console.error("Failed to persist demo meal plan:", err);
+      return NextResponse.json({ success: true, plan, demo: true });
+    }
   }
 
   // 6. Calculate weekOf
@@ -271,7 +264,17 @@ export async function POST(request: Request) {
   // 10. Override weekOf with server-computed value
   plan.weekOf = weekOf;
 
-  // 11. Send email
+  // 11. Persist plan
+  let stored: { id: string; created_at: string } & MealPlan;
+  try {
+    stored = await getMealPlanRepo().save(plan);
+  } catch (err) {
+    console.error("Failed to persist meal plan:", err);
+    // Still return the plan even if persistence fails
+    stored = { ...plan, id: "", created_at: new Date().toISOString() };
+  }
+
+  // 12. Send email
   let emailSent = false;
   let emailError: string | undefined;
 
@@ -284,6 +287,11 @@ export async function POST(request: Request) {
     console.error("Failed to send meal plan email:", err);
   }
 
-  // 12. Return
-  return NextResponse.json({ success: true, plan, emailSent, emailError });
+  // 13. Return
+  return NextResponse.json({
+    success: true,
+    plan: stored,
+    emailSent,
+    emailError,
+  });
 }

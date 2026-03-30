@@ -1,29 +1,20 @@
 import { NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
 import { pickRecipeFields, validateRecipeBody } from "@/lib/recipe-validation";
-import { isDemoMode, demoStore } from "@/lib/demo-mode";
+import { getRecipeRepo } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  if (isDemoMode()) {
-    return NextResponse.json(demoStore.listRecipes());
-  }
-
-  const { data, error } = await getSupabase()
-    .from("recipes")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("Failed to fetch recipes:", error);
+  try {
+    const recipes = await getRecipeRepo().list();
+    return NextResponse.json(recipes);
+  } catch (err) {
+    console.error("Failed to fetch recipes:", err);
     return NextResponse.json(
       { error: "Failed to fetch recipes" },
       { status: 500 }
     );
   }
-
-  return NextResponse.json(data);
 }
 
 export async function POST(request: Request) {
@@ -44,24 +35,14 @@ export async function POST(request: Request) {
 
   const recipeData = pickRecipeFields(body);
 
-  if (isDemoMode()) {
-    const recipe = demoStore.createRecipe(recipeData);
+  try {
+    const recipe = await getRecipeRepo().create(recipeData);
     return NextResponse.json(recipe, { status: 201 });
-  }
-
-  const { data, error } = await getSupabase()
-    .from("recipes")
-    .insert(recipeData)
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Failed to create recipe:", error);
+  } catch (err) {
+    console.error("Failed to create recipe:", err);
     return NextResponse.json(
       { error: "Failed to create recipe" },
       { status: 500 }
     );
   }
-
-  return NextResponse.json(data, { status: 201 });
 }

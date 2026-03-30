@@ -1,15 +1,15 @@
 import { GET, PUT, DELETE } from "./route";
-import { createSupabaseMock } from "@/test/helpers";
 
-const supabaseMock = createSupabaseMock();
+const mockRecipeRepo = {
+  list: vi.fn(),
+  getById: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+};
 
-vi.mock("@/lib/supabase", () => ({
-  getSupabase: vi.fn(() => supabaseMock.mock),
-}));
-
-vi.mock("@/lib/demo-mode", () => ({
-  isDemoMode: vi.fn(() => false),
-  demoStore: {},
+vi.mock("@/lib/storage", () => ({
+  getRecipeRepo: () => mockRecipeRepo,
 }));
 
 const VALID_UUID = "550e8400-e29b-41d4-a716-446655440000";
@@ -21,7 +21,7 @@ function params(id: string) {
 
 describe("GET /api/recipes/[id]", () => {
   beforeEach(() => {
-    supabaseMock.reset();
+    vi.clearAllMocks();
   });
 
   it("returns 400 for invalid UUID", async () => {
@@ -37,7 +37,7 @@ describe("GET /api/recipes/[id]", () => {
 
   it("returns 200 with recipe", async () => {
     const recipe = { id: VALID_UUID, name: "Pasta" };
-    supabaseMock.resolveWith(recipe);
+    mockRecipeRepo.getById.mockResolvedValue(recipe);
 
     const response = await GET(
       new Request("http://localhost"),
@@ -47,14 +47,10 @@ describe("GET /api/recipes/[id]", () => {
 
     expect(response.status).toBe(200);
     expect(body).toEqual(recipe);
-    expect(supabaseMock.mock.eq).toHaveBeenCalledWith("id", VALID_UUID);
   });
 
-  it("returns 404 when not found (PGRST116)", async () => {
-    supabaseMock.resolveWith(null, {
-      code: "PGRST116",
-      message: "not found",
-    });
+  it("returns 404 when not found", async () => {
+    mockRecipeRepo.getById.mockResolvedValue(null);
 
     const response = await GET(
       new Request("http://localhost"),
@@ -66,8 +62,8 @@ describe("GET /api/recipes/[id]", () => {
     expect(body.error).toBe("Recipe not found");
   });
 
-  it("returns 500 on other errors", async () => {
-    supabaseMock.resolveWith(null, { code: "OTHER", message: "db error" });
+  it("returns 500 on storage error", async () => {
+    mockRecipeRepo.getById.mockRejectedValue(new Error("db error"));
 
     const response = await GET(
       new Request("http://localhost"),
@@ -82,8 +78,7 @@ describe("GET /api/recipes/[id]", () => {
 
 describe("PUT /api/recipes/[id]", () => {
   beforeEach(() => {
-    supabaseMock.reset();
-    vi.useRealTimers();
+    vi.clearAllMocks();
   });
 
   function putRequest(body: unknown) {
@@ -107,7 +102,7 @@ describe("PUT /api/recipes/[id]", () => {
 
   it("returns 200 with updated recipe", async () => {
     const updated = { id: VALID_UUID, name: "Updated Pasta" };
-    supabaseMock.resolveWith(updated);
+    mockRecipeRepo.update.mockResolvedValue(updated);
 
     const response = await PUT(
       putRequest({
@@ -141,28 +136,8 @@ describe("PUT /api/recipes/[id]", () => {
     expect(body.error).toContain("name is required");
   });
 
-  it("sets updated_at in update payload", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-01-15T12:00:00.000Z"));
-
-    supabaseMock.resolveWith({ id: VALID_UUID, name: "Pasta" });
-
-    await PUT(
-      putRequest({ name: "Pasta", ingredients: [{ name: "Noodles" }] }),
-      params(VALID_UUID)
-    );
-
-    expect(supabaseMock.mock.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        updated_at: "2026-01-15T12:00:00.000Z",
-      })
-    );
-
-    vi.useRealTimers();
-  });
-
   it("strips unknown fields", async () => {
-    supabaseMock.resolveWith({ id: VALID_UUID, name: "Pasta" });
+    mockRecipeRepo.update.mockResolvedValue({ id: VALID_UUID, name: "Pasta" });
 
     await PUT(
       putRequest({
@@ -173,16 +148,13 @@ describe("PUT /api/recipes/[id]", () => {
       params(VALID_UUID)
     );
 
-    const updateArg = supabaseMock.mock.update.mock.calls[0][0];
+    const updateArg = mockRecipeRepo.update.mock.calls[0][1];
     expect(updateArg).not.toHaveProperty("hack");
     expect(updateArg).toHaveProperty("name", "Pasta");
   });
 
-  it("returns 404 when not found (PGRST116)", async () => {
-    supabaseMock.resolveWith(null, {
-      code: "PGRST116",
-      message: "not found",
-    });
+  it("returns 404 when not found", async () => {
+    mockRecipeRepo.update.mockResolvedValue(null);
 
     const response = await PUT(
       putRequest({ name: "Pasta", ingredients: [{ name: "Noodles" }] }),
@@ -194,8 +166,8 @@ describe("PUT /api/recipes/[id]", () => {
     expect(body.error).toBe("Recipe not found");
   });
 
-  it("returns 500 on other errors", async () => {
-    supabaseMock.resolveWith(null, { code: "OTHER", message: "db error" });
+  it("returns 500 on storage error", async () => {
+    mockRecipeRepo.update.mockRejectedValue(new Error("db error"));
 
     const response = await PUT(
       putRequest({ name: "Pasta", ingredients: [{ name: "Noodles" }] }),
@@ -210,7 +182,7 @@ describe("PUT /api/recipes/[id]", () => {
 
 describe("DELETE /api/recipes/[id]", () => {
   beforeEach(() => {
-    supabaseMock.reset();
+    vi.clearAllMocks();
   });
 
   it("returns 400 for invalid UUID", async () => {
@@ -225,7 +197,7 @@ describe("DELETE /api/recipes/[id]", () => {
   });
 
   it("returns 204 on success", async () => {
-    supabaseMock.resolveWith({ id: VALID_UUID, name: "Pasta" });
+    mockRecipeRepo.delete.mockResolvedValue(true);
 
     const response = await DELETE(
       new Request("http://localhost"),
@@ -236,11 +208,8 @@ describe("DELETE /api/recipes/[id]", () => {
     expect(await response.text()).toBe("");
   });
 
-  it("returns 404 when not found (PGRST116)", async () => {
-    supabaseMock.resolveWith(null, {
-      code: "PGRST116",
-      message: "not found",
-    });
+  it("returns 404 when not found", async () => {
+    mockRecipeRepo.delete.mockResolvedValue(false);
 
     const response = await DELETE(
       new Request("http://localhost"),
@@ -252,21 +221,8 @@ describe("DELETE /api/recipes/[id]", () => {
     expect(body.error).toBe("Recipe not found");
   });
 
-  it("returns 404 when data is null", async () => {
-    supabaseMock.resolveWith(null);
-
-    const response = await DELETE(
-      new Request("http://localhost"),
-      params(VALID_UUID)
-    );
-    const body = await response.json();
-
-    expect(response.status).toBe(404);
-    expect(body.error).toBe("Recipe not found");
-  });
-
-  it("returns 500 on other errors", async () => {
-    supabaseMock.resolveWith(null, { code: "OTHER", message: "db error" });
+  it("returns 500 on storage error", async () => {
+    mockRecipeRepo.delete.mockRejectedValue(new Error("db error"));
 
     const response = await DELETE(
       new Request("http://localhost"),

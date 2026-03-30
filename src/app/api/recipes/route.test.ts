@@ -1,20 +1,20 @@
 import { GET, POST } from "./route";
-import { createSupabaseMock } from "@/test/helpers";
 
-const supabaseMock = createSupabaseMock();
+const mockRecipeRepo = {
+  list: vi.fn(),
+  getById: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+};
 
-vi.mock("@/lib/supabase", () => ({
-  getSupabase: vi.fn(() => supabaseMock.mock),
-}));
-
-vi.mock("@/lib/demo-mode", () => ({
-  isDemoMode: vi.fn(() => false),
-  demoStore: {},
+vi.mock("@/lib/storage", () => ({
+  getRecipeRepo: () => mockRecipeRepo,
 }));
 
 describe("GET /api/recipes", () => {
   beforeEach(() => {
-    supabaseMock.reset();
+    vi.clearAllMocks();
   });
 
   it("returns 200 with recipe array", async () => {
@@ -22,22 +22,17 @@ describe("GET /api/recipes", () => {
       { id: "1", name: "Pasta" },
       { id: "2", name: "Salad" },
     ];
-    supabaseMock.resolveWith(recipes);
+    mockRecipeRepo.list.mockResolvedValue(recipes);
 
     const response = await GET();
     const body = await response.json();
 
     expect(response.status).toBe(200);
     expect(body).toEqual(recipes);
-    expect(supabaseMock.mock.from).toHaveBeenCalledWith("recipes");
-    expect(supabaseMock.mock.select).toHaveBeenCalledWith("*");
-    expect(supabaseMock.mock.order).toHaveBeenCalledWith("created_at", {
-      ascending: false,
-    });
   });
 
   it("returns 200 with empty array when no recipes", async () => {
-    supabaseMock.resolveWith([]);
+    mockRecipeRepo.list.mockResolvedValue([]);
 
     const response = await GET();
     const body = await response.json();
@@ -46,8 +41,8 @@ describe("GET /api/recipes", () => {
     expect(body).toEqual([]);
   });
 
-  it("returns 500 on Supabase error", async () => {
-    supabaseMock.resolveWith(null, { message: "Database error" });
+  it("returns 500 on storage error", async () => {
+    mockRecipeRepo.list.mockRejectedValue(new Error("Database error"));
 
     const response = await GET();
     const body = await response.json();
@@ -59,7 +54,7 @@ describe("GET /api/recipes", () => {
 
 describe("POST /api/recipes", () => {
   beforeEach(() => {
-    supabaseMock.reset();
+    vi.clearAllMocks();
   });
 
   function postRequest(body: unknown) {
@@ -76,7 +71,7 @@ describe("POST /api/recipes", () => {
       name: "Pasta",
       ingredients: [{ name: "Noodles", quantity: "200", unit: "g" }],
     };
-    supabaseMock.resolveWith(recipe);
+    mockRecipeRepo.create.mockResolvedValue(recipe);
 
     const response = await POST(
       postRequest({
@@ -146,8 +141,8 @@ describe("POST /api/recipes", () => {
     expect(body.error).toContain("ingredients[0].name is required");
   });
 
-  it("strips unknown fields before insert", async () => {
-    supabaseMock.resolveWith({
+  it("strips unknown fields before create", async () => {
+    mockRecipeRepo.create.mockResolvedValue({
       id: "abc",
       name: "Pasta",
       ingredients: [{ name: "Noodles" }],
@@ -162,14 +157,14 @@ describe("POST /api/recipes", () => {
       })
     );
 
-    expect(supabaseMock.mock.insert).toHaveBeenCalledWith({
+    expect(mockRecipeRepo.create).toHaveBeenCalledWith({
       name: "Pasta",
       ingredients: [{ name: "Noodles" }],
     });
   });
 
-  it("returns 500 on Supabase error", async () => {
-    supabaseMock.resolveWith(null, { message: "Insert failed" });
+  it("returns 500 on storage error", async () => {
+    mockRecipeRepo.create.mockRejectedValue(new Error("Insert failed"));
 
     const response = await POST(
       postRequest({

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
 import { pickRecipeFields, validateRecipeBody } from "@/lib/recipe-validation";
-import { isDemoMode, demoStore } from "@/lib/demo-mode";
+import { getRecipeRepo } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
@@ -21,8 +20,8 @@ export async function GET(
     );
   }
 
-  if (isDemoMode()) {
-    const recipe = demoStore.getRecipe(id);
+  try {
+    const recipe = await getRecipeRepo().getById(id);
     if (!recipe) {
       return NextResponse.json(
         { error: "Recipe not found" },
@@ -30,29 +29,13 @@ export async function GET(
       );
     }
     return NextResponse.json(recipe);
-  }
-
-  const { data, error } = await getSupabase()
-    .from("recipes")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (error) {
-    if (error.code === "PGRST116") {
-      return NextResponse.json(
-        { error: "Recipe not found" },
-        { status: 404 }
-      );
-    }
-    console.error("Failed to fetch recipe:", error);
+  } catch (err) {
+    console.error("Failed to fetch recipe:", err);
     return NextResponse.json(
       { error: "Failed to fetch recipe" },
       { status: 500 }
     );
   }
-
-  return NextResponse.json(data);
 }
 
 export async function PUT(
@@ -85,8 +68,8 @@ export async function PUT(
 
   const recipeData = pickRecipeFields(body);
 
-  if (isDemoMode()) {
-    const updated = demoStore.updateRecipe(id, recipeData);
+  try {
+    const updated = await getRecipeRepo().update(id, recipeData);
     if (!updated) {
       return NextResponse.json(
         { error: "Recipe not found" },
@@ -94,30 +77,13 @@ export async function PUT(
       );
     }
     return NextResponse.json(updated);
-  }
-
-  const { data, error } = await getSupabase()
-    .from("recipes")
-    .update({ ...recipeData, updated_at: new Date().toISOString() })
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) {
-    if (error.code === "PGRST116") {
-      return NextResponse.json(
-        { error: "Recipe not found" },
-        { status: 404 }
-      );
-    }
-    console.error("Failed to update recipe:", error);
+  } catch (err) {
+    console.error("Failed to update recipe:", err);
     return NextResponse.json(
       { error: "Failed to update recipe" },
       { status: 500 }
     );
   }
-
-  return NextResponse.json(data);
 }
 
 export async function DELETE(
@@ -133,8 +99,8 @@ export async function DELETE(
     );
   }
 
-  if (isDemoMode()) {
-    const deleted = demoStore.deleteRecipe(id);
+  try {
+    const deleted = await getRecipeRepo().delete(id);
     if (!deleted) {
       return NextResponse.json(
         { error: "Recipe not found" },
@@ -142,35 +108,11 @@ export async function DELETE(
       );
     }
     return new NextResponse(null, { status: 204 });
-  }
-
-  const { data, error } = await getSupabase()
-    .from("recipes")
-    .delete()
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) {
-    if (error.code === "PGRST116") {
-      return NextResponse.json(
-        { error: "Recipe not found" },
-        { status: 404 }
-      );
-    }
-    console.error("Failed to delete recipe:", error);
+  } catch (err) {
+    console.error("Failed to delete recipe:", err);
     return NextResponse.json(
       { error: "Failed to delete recipe" },
       { status: 500 }
     );
   }
-
-  if (!data) {
-    return NextResponse.json(
-      { error: "Recipe not found" },
-      { status: 404 }
-    );
-  }
-
-  return new NextResponse(null, { status: 204 });
 }

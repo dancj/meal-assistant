@@ -1,21 +1,33 @@
 import { POST } from "./route";
-import { createSupabaseMock } from "@/test/helpers";
 
-const supabaseMock = createSupabaseMock();
+const mockRecipeRepo = {
+  list: vi.fn(),
+  getById: vi.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+};
+
+const mockMealPlanRepo = {
+  save: vi.fn(),
+  getCurrent: vi.fn(),
+  list: vi.fn(),
+};
 
 const { generateContentMock, sendMealPlanEmailMock } = vi.hoisted(() => ({
   generateContentMock: vi.fn(),
   sendMealPlanEmailMock: vi.fn(),
 }));
 
-vi.mock("@/lib/supabase", () => ({
-  getSupabase: vi.fn(() => supabaseMock.mock),
+vi.mock("@/lib/storage", () => ({
+  getRecipeRepo: () => mockRecipeRepo,
+  getMealPlanRepo: () => mockMealPlanRepo,
 }));
 
 vi.mock("@/lib/demo-mode", () => ({
   isDemoMode: vi.fn(() => false),
+  isLocalMode: vi.fn(() => false),
   isGeminiAvailable: vi.fn(() => true),
-  demoStore: {},
   generateDemoMealPlan: vi.fn(),
 }));
 
@@ -96,10 +108,13 @@ function postRequestNoAuth(body?: unknown) {
 
 describe("POST /api/generate-plan", () => {
   beforeEach(() => {
-    supabaseMock.reset();
-    generateContentMock.mockReset();
-    sendMealPlanEmailMock.mockReset();
+    vi.clearAllMocks();
     sendMealPlanEmailMock.mockResolvedValue({ emailId: "email-123" });
+    mockMealPlanRepo.save.mockImplementation(async (plan: unknown) => ({
+      id: "plan-123",
+      ...(plan as object),
+      created_at: "2026-01-01T00:00:00Z",
+    }));
     vi.stubEnv("CRON_SECRET", CRON_SECRET);
   });
 
@@ -135,11 +150,25 @@ describe("POST /api/generate-plan", () => {
       expect(response.status).toBe(401);
       expect(body.error).toBe("Unauthorized");
     });
+
+    it("skips auth when CRON_SECRET is not configured", async () => {
+      vi.stubEnv("CRON_SECRET", "");
+      mockRecipeRepo.list.mockResolvedValue(FIVE_RECIPES);
+      generateContentMock.mockResolvedValue({
+        text: JSON.stringify(validMealPlanResponse()),
+      });
+
+      const response = await POST(postRequestNoAuth());
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body.success).toBe(true);
+    });
   });
 
   describe("body parsing", () => {
     it("accepts empty body (no preferences)", async () => {
-      supabaseMock.resolveWith(FIVE_RECIPES);
+      mockRecipeRepo.list.mockResolvedValue(FIVE_RECIPES);
       generateContentMock.mockResolvedValue({
         text: JSON.stringify(validMealPlanResponse()),
       });
@@ -152,7 +181,7 @@ describe("POST /api/generate-plan", () => {
     });
 
     it("accepts body with preferences", async () => {
-      supabaseMock.resolveWith(FIVE_RECIPES);
+      mockRecipeRepo.list.mockResolvedValue(FIVE_RECIPES);
       generateContentMock.mockResolvedValue({
         text: JSON.stringify(validMealPlanResponse()),
       });
@@ -180,7 +209,7 @@ describe("POST /api/generate-plan", () => {
     });
 
     it("ignores non-string preferences", async () => {
-      supabaseMock.resolveWith(FIVE_RECIPES);
+      mockRecipeRepo.list.mockResolvedValue(FIVE_RECIPES);
       generateContentMock.mockResolvedValue({
         text: JSON.stringify(validMealPlanResponse()),
       });
@@ -199,8 +228,8 @@ describe("POST /api/generate-plan", () => {
   });
 
   describe("recipe fetching", () => {
-    it("returns 500 on Supabase error", async () => {
-      supabaseMock.resolveWith(null, { message: "Database error" });
+    it("returns 500 on storage error", async () => {
+      mockRecipeRepo.list.mockRejectedValue(new Error("Database error"));
 
       const response = await POST(postRequest());
       const body = await response.json();
@@ -210,7 +239,7 @@ describe("POST /api/generate-plan", () => {
     });
 
     it("returns 400 when fewer than 5 recipes", async () => {
-      supabaseMock.resolveWith([
+      mockRecipeRepo.list.mockResolvedValue([
         makeRecipe("id-1", "Pasta"),
         makeRecipe("id-2", "Tacos"),
       ]);
@@ -222,22 +251,11 @@ describe("POST /api/generate-plan", () => {
       expect(body.error).toContain("Not enough recipes");
       expect(body.error).toContain("Found 2");
     });
-
-    it("returns 400 when recipes is null", async () => {
-      supabaseMock.resolveWith(null);
-
-      const response = await POST(postRequest());
-      const body = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(body.error).toContain("Not enough recipes");
-      expect(body.error).toContain("Found 0");
-    });
   });
 
   describe("Gemini integration", () => {
     beforeEach(() => {
-      supabaseMock.resolveWith(FIVE_RECIPES);
+      mockRecipeRepo.list.mockResolvedValue(FIVE_RECIPES);
     });
 
     it("returns 200 with valid meal plan", async () => {
@@ -295,8 +313,19 @@ describe("POST /api/generate-plan", () => {
 
       expect(response.status).toBe(200);
       expect(body.plan.weekOf).not.toBe("1999-01-01");
-      // Should be a valid date string
       expect(body.plan.weekOf).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    });
+
+    it("persists the generated plan", async () => {
+      generateContentMock.mockResolvedValue({
+        text: JSON.stringify(validMealPlanResponse()),
+      });
+
+      await POST(postRequest());
+
+      expect(mockMealPlanRepo.save).toHaveBeenCalledOnce();
+      const savedPlan = mockMealPlanRepo.save.mock.calls[0][0];
+      expect(savedPlan.dinners).toHaveLength(5);
     });
 
     it("returns 500 when Gemini call throws", async () => {
@@ -342,7 +371,7 @@ describe("POST /api/generate-plan", () => {
 
   describe("post-generation validation", () => {
     beforeEach(() => {
-      supabaseMock.resolveWith(FIVE_RECIPES);
+      mockRecipeRepo.list.mockResolvedValue(FIVE_RECIPES);
     });
 
     it("returns 500 when dinners count is not 5", async () => {
@@ -390,7 +419,7 @@ describe("POST /api/generate-plan", () => {
 
   describe("email delivery", () => {
     beforeEach(() => {
-      supabaseMock.resolveWith(FIVE_RECIPES);
+      mockRecipeRepo.list.mockResolvedValue(FIVE_RECIPES);
       generateContentMock.mockResolvedValue({
         text: JSON.stringify(validMealPlanResponse()),
       });

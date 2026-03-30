@@ -1,9 +1,13 @@
 import type { Recipe } from "@/types/recipe";
 import type { MealPlan } from "@/types/meal-plan";
-import { DEMO_RECIPES } from "@/lib/demo-data";
 
-export function isDemoMode(): boolean {
+export function isLocalMode(): boolean {
   return !process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY;
+}
+
+/** @deprecated Use isLocalMode() instead */
+export function isDemoMode(): boolean {
+  return isLocalMode();
 }
 
 export function isGeminiAvailable(): boolean {
@@ -11,69 +15,7 @@ export function isGeminiAvailable(): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// In-memory recipe store (resets on server restart)
-// ---------------------------------------------------------------------------
-
-const recipes: Recipe[] = [...DEMO_RECIPES];
-
-function nextId(): string {
-  return "d0000000-0000-0000-0000-" + crypto.randomUUID().slice(-12);
-}
-
-export const demoStore = {
-  listRecipes(): Recipe[] {
-    return [...recipes].sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-  },
-
-  getRecipe(id: string): Recipe | undefined {
-    return recipes.find((r) => r.id === id);
-  },
-
-  createRecipe(data: Partial<Recipe>): Recipe {
-    const now = new Date().toISOString();
-    const recipe: Recipe = {
-      id: nextId(),
-      name: data.name ?? "",
-      ingredients: data.ingredients ?? [],
-      instructions: data.instructions ?? null,
-      tags: data.tags ?? [],
-      servings: data.servings ?? null,
-      prep_time: data.prep_time ?? null,
-      cook_time: data.cook_time ?? null,
-      source_url: data.source_url ?? null,
-      notes: data.notes ?? null,
-      created_at: now,
-      updated_at: now,
-    };
-    recipes.push(recipe);
-    return recipe;
-  },
-
-  updateRecipe(id: string, data: Partial<Recipe>): Recipe | null {
-    const idx = recipes.findIndex((r) => r.id === id);
-    if (idx === -1) return null;
-    recipes[idx] = {
-      ...recipes[idx],
-      ...data,
-      id, // preserve id
-      updated_at: new Date().toISOString(),
-    };
-    return recipes[idx];
-  },
-
-  deleteRecipe(id: string): boolean {
-    const idx = recipes.findIndex((r) => r.id === id);
-    if (idx === -1) return false;
-    recipes.splice(idx, 1);
-    return true;
-  },
-};
-
-// ---------------------------------------------------------------------------
-// Mock meal plan generation
+// Mock meal plan generation (used when Gemini is not configured)
 // ---------------------------------------------------------------------------
 
 function getNextMonday(): string {
@@ -85,9 +27,8 @@ function getNextMonday(): string {
   return nextMonday.toISOString().split("T")[0];
 }
 
-export function generateDemoMealPlan(): MealPlan {
-  const available = demoStore.listRecipes();
-  const selected = available.slice(0, 5);
+export function generateDemoMealPlan(recipes: Recipe[]): MealPlan {
+  const selected = recipes.slice(0, 5);
   const days = [
     "Monday",
     "Tuesday",

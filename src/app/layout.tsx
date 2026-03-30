@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
-import { Plus, UtensilsCrossed } from "lucide-react";
+import { CalendarDays, Plus, UtensilsCrossed } from "lucide-react";
 import DemoBanner from "@/components/DemoBanner";
 import "./globals.css";
 
@@ -37,14 +37,24 @@ export default function RootLayout({
               <UtensilsCrossed className="size-5 text-primary" />
               Meal Assistant
             </Link>
-            <Link
-              href="/recipes/new"
-              className="inline-flex shrink-0 items-center justify-center gap-1 rounded-lg bg-primary text-primary-foreground h-7 px-2.5 text-[0.8rem] font-medium hover:bg-primary/80 transition-all"
-              data-testid="add-recipe-link"
-            >
-              <Plus className="size-3.5" />
-              Add Recipe
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/generate"
+                className="inline-flex shrink-0 items-center justify-center gap-1 rounded-lg border border-primary/20 text-primary h-7 px-2.5 text-[0.8rem] font-medium hover:bg-primary/5 transition-all"
+                data-testid="generate-plan-link"
+              >
+                <CalendarDays className="size-3.5" />
+                Generate Plan
+              </Link>
+              <Link
+                href="/recipes/new"
+                className="inline-flex shrink-0 items-center justify-center gap-1 rounded-lg bg-primary text-primary-foreground h-7 px-2.5 text-[0.8rem] font-medium hover:bg-primary/80 transition-all"
+                data-testid="add-recipe-link"
+              >
+                <Plus className="size-3.5" />
+                Add Recipe
+              </Link>
+            </div>
           </nav>
         </header>
         <main className="max-w-3xl mx-auto px-4 py-8">{children}</main>

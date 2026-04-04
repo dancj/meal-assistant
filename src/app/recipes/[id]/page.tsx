@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Pencil, Clock, Users, Loader2, ShoppingBasket, ChefHat, NotebookPen, Link2 } from "lucide-react";
+import { ChevronLeft, Pencil, Clock, Users, ShoppingBasket, ChefHat, NotebookPen, Link2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import DeleteButton from "@/components/DeleteButton";
 import type { Recipe } from "@/types/recipe";
 
@@ -40,8 +41,45 @@ export default function RecipeDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="size-6 text-primary/60 animate-spin" />
+      <div data-testid="recipe-detail-skeleton">
+        <Skeleton className="h-4 w-28 mb-6" />
+        <div className="mt-6">
+          <div className="flex items-start justify-between gap-4">
+            <Skeleton className="h-8 w-64" />
+            <div className="flex gap-2 shrink-0">
+              <Skeleton className="h-8 w-16 rounded-lg" />
+              <Skeleton className="h-8 w-20 rounded-lg" />
+            </div>
+          </div>
+          <div className="flex gap-1.5 mt-3">
+            <Skeleton className="h-5 w-16 rounded-4xl" />
+            <Skeleton className="h-5 w-20 rounded-4xl" />
+          </div>
+          <div className="flex gap-4 mt-4">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+        </div>
+        <Card className="mt-8">
+          <CardContent>
+            <Skeleton className="h-4 w-24 mb-3" />
+            <div className="space-y-1.5">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-4 w-full max-w-xs" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="mt-4">
+          <CardContent>
+            <Skeleton className="h-4 w-24 mb-3" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

@@ -6,15 +6,28 @@ const mockRecipeRepo = {
   create: vi.fn(),
   update: vi.fn(),
   delete: vi.fn(),
+  search: vi.fn(),
 };
 
 vi.mock("@/lib/storage", () => ({
   getRecipeRepo: () => mockRecipeRepo,
 }));
 
+function getRequest(url = "http://localhost/api/recipes"): Request {
+  return new Request(url);
+}
+
 describe("GET /api/recipes", () => {
+  const originalEnv = process.env;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env = { ...originalEnv };
+    delete process.env.CRON_SECRET;
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
   });
 
   it("returns 200 with recipe array", async () => {
@@ -24,7 +37,7 @@ describe("GET /api/recipes", () => {
     ];
     mockRecipeRepo.list.mockResolvedValue(recipes);
 
-    const response = await GET();
+    const response = await GET(getRequest());
     const body = await response.json();
 
     expect(response.status).toBe(200);
@@ -34,7 +47,7 @@ describe("GET /api/recipes", () => {
   it("returns 200 with empty array when no recipes", async () => {
     mockRecipeRepo.list.mockResolvedValue([]);
 
-    const response = await GET();
+    const response = await GET(getRequest());
     const body = await response.json();
 
     expect(response.status).toBe(200);
@@ -44,17 +57,42 @@ describe("GET /api/recipes", () => {
   it("returns 500 on storage error", async () => {
     mockRecipeRepo.list.mockRejectedValue(new Error("Database error"));
 
-    const response = await GET();
+    const response = await GET(getRequest());
     const body = await response.json();
 
     expect(response.status).toBe(500);
     expect(body.error).toBe("Failed to fetch recipes");
   });
+
+  it("returns 401 when CRON_SECRET is set and no token provided", async () => {
+    process.env.CRON_SECRET = "test-secret";
+    const response = await GET(getRequest());
+    expect(response.status).toBe(401);
+  });
+
+  it("returns 200 when CRON_SECRET is set and valid token provided", async () => {
+    process.env.CRON_SECRET = "test-secret";
+    mockRecipeRepo.list.mockResolvedValue([]);
+    const response = await GET(
+      new Request("http://localhost/api/recipes", {
+        headers: { Authorization: "Bearer test-secret" },
+      })
+    );
+    expect(response.status).toBe(200);
+  });
 });
 
 describe("POST /api/recipes", () => {
+  const originalEnv = process.env;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env = { ...originalEnv };
+    delete process.env.CRON_SECRET;
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
   });
 
   function postRequest(body: unknown) {
@@ -176,5 +214,13 @@ describe("POST /api/recipes", () => {
 
     expect(response.status).toBe(500);
     expect(body.error).toBe("Failed to create recipe");
+  });
+
+  it("returns 401 when CRON_SECRET is set and no token provided", async () => {
+    process.env.CRON_SECRET = "test-secret";
+    const response = await POST(
+      postRequest({ name: "Pasta", ingredients: [{ name: "Noodles" }] })
+    );
+    expect(response.status).toBe(401);
   });
 });

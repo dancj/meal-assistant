@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { pickRecipeFields, validateRecipeBody } from "@/lib/recipe-validation";
 import { getRecipeRepo } from "@/lib/storage";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const authError = requireAuth(request);
+  if (authError) return authError;
   try {
     const recipes = await getRecipeRepo().list();
     return NextResponse.json(recipes);
@@ -18,6 +21,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
   let body: Record<string, unknown>;
   try {
     body = await request.json();

@@ -80,6 +80,76 @@ describe("GET /api/recipes", () => {
     );
     expect(response.status).toBe(200);
   });
+
+  it("calls search with q param", async () => {
+    const recipes = [{ id: "1", name: "Chicken Pasta" }];
+    mockRecipeRepo.search.mockResolvedValue(recipes);
+
+    const response = await GET(
+      getRequest("http://localhost/api/recipes?q=chicken")
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual(recipes);
+    expect(mockRecipeRepo.search).toHaveBeenCalledWith({
+      q: "chicken",
+      tag: undefined,
+    });
+    expect(mockRecipeRepo.list).not.toHaveBeenCalled();
+  });
+
+  it("calls search with tag param", async () => {
+    mockRecipeRepo.search.mockResolvedValue([]);
+
+    const response = await GET(
+      getRequest("http://localhost/api/recipes?tag=dinner")
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockRecipeRepo.search).toHaveBeenCalledWith({
+      q: undefined,
+      tag: "dinner",
+    });
+  });
+
+  it("calls search with both q and tag", async () => {
+    mockRecipeRepo.search.mockResolvedValue([]);
+
+    const response = await GET(
+      getRequest("http://localhost/api/recipes?q=pasta&tag=quick")
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockRecipeRepo.search).toHaveBeenCalledWith({
+      q: "pasta",
+      tag: "quick",
+    });
+  });
+
+  it("calls list when q is empty string", async () => {
+    mockRecipeRepo.list.mockResolvedValue([]);
+
+    const response = await GET(
+      getRequest("http://localhost/api/recipes?q=")
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockRecipeRepo.list).toHaveBeenCalled();
+    expect(mockRecipeRepo.search).not.toHaveBeenCalled();
+  });
+
+  it("returns empty array for no search results", async () => {
+    mockRecipeRepo.search.mockResolvedValue([]);
+
+    const response = await GET(
+      getRequest("http://localhost/api/recipes?q=nonexistent")
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual([]);
+  });
 });
 
 describe("POST /api/recipes", () => {

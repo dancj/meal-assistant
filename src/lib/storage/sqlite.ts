@@ -4,6 +4,7 @@ import type { Recipe } from "@/types/recipe";
 import type { MealPlan } from "@/types/meal-plan";
 import type {
   RecipeRepository,
+  RecipeSearchQuery,
   MealPlanRepository,
   StoredMealPlan,
 } from "./types";
@@ -113,6 +114,28 @@ export class SqliteRecipeRepository implements RecipeRepository {
     const rows = getDb()
       .prepare("SELECT * FROM recipes ORDER BY created_at DESC")
       .all() as RecipeRow[];
+    return rows.map(rowToRecipe);
+  }
+
+  async search(query: RecipeSearchQuery): Promise<Recipe[]> {
+    const conditions: string[] = [];
+    const params: string[] = [];
+
+    if (query.q) {
+      conditions.push("name LIKE ? COLLATE NOCASE");
+      params.push(`%${query.q}%`);
+    }
+
+    if (query.tag) {
+      conditions.push("tags LIKE ? COLLATE NOCASE");
+      params.push(`%${JSON.stringify(query.tag).slice(1, -1)}%`);
+    }
+
+    const where =
+      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const rows = getDb()
+      .prepare(`SELECT * FROM recipes ${where} ORDER BY created_at DESC`)
+      .all(...params) as RecipeRow[];
     return rows.map(rowToRecipe);
   }
 

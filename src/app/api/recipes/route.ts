@@ -8,8 +8,14 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const authError = requireAuth(request);
   if (authError) return authError;
+
   try {
-    const recipes = await getRecipeRepo().list();
+    const { searchParams } = new URL(request.url);
+    const q = searchParams.get("q") || undefined;
+    const tag = searchParams.get("tag") || undefined;
+
+    const repo = getRecipeRepo();
+    const recipes = q || tag ? await repo.search({ q, tag }) : await repo.list();
     return NextResponse.json(recipes);
   } catch (err) {
     console.error("Failed to fetch recipes:", err);

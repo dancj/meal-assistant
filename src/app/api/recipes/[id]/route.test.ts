@@ -198,6 +198,15 @@ describe("PUT /api/recipes/[id]", () => {
     expect(response.status).toBe(500);
     expect(body.error).toBe("Failed to update recipe");
   });
+
+  it("returns 401 when CRON_SECRET is set and no token provided", async () => {
+    process.env.CRON_SECRET = "test-secret";
+    const response = await PUT(
+      putRequest({ name: "Pasta", ingredients: [{ name: "Noodles" }] }),
+      params(VALID_UUID)
+    );
+    expect(response.status).toBe(401);
+  });
 });
 
 describe("DELETE /api/recipes/[id]", () => {

@@ -48,7 +48,8 @@ export async function POST(request: Request) {
   const recipeData = pickRecipeFields(body);
 
   try {
-    const recipe = await getRecipeRepo().create(recipeData);
+    const repo = getRecipeRepo();
+    const recipe = await repo.create(recipeData);
     return NextResponse.json(recipe, { status: 201 });
   } catch (err) {
     console.error("Failed to create recipe:", err);

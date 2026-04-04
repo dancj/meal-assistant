@@ -7,6 +7,7 @@ import { ChevronLeft, Pencil, Clock, Users, ShoppingBasket, ChefHat, NotebookPen
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import DeleteButton from "@/components/DeleteButton";
 import type { Recipe } from "@/types/recipe";
@@ -153,7 +154,9 @@ export default function RecipeDetailPage() {
         </div>
       </div>
 
-      <Card className="mt-8">
+      <Separator className="mt-6" />
+
+      <Card className="mt-6">
         <CardContent>
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1.5"><ShoppingBasket className="size-4 text-primary/60" />Ingredients</h2>
           <ul className="space-y-1.5">

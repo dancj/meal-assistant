@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { buttonVariants } from "@/components/ui/button";
 import RecipeForm from "@/components/RecipeForm";
 import type { RecipeFormData } from "@/components/RecipeForm";
@@ -46,6 +47,7 @@ export default function EditRecipePage() {
       throw new Error(body?.error ?? "Failed to update recipe");
     }
 
+    toast.success("Recipe updated");
     router.push(`/recipes/${params.id}`);
     router.refresh();
   }

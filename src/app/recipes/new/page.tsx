@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
+import { toast } from "sonner";
 import RecipeForm from "@/components/RecipeForm";
 import type { RecipeFormData } from "@/components/RecipeForm";
 
@@ -21,6 +22,7 @@ export default function NewRecipePage() {
       throw new Error(body?.error ?? "Failed to create recipe");
     }
 
+    toast.success("Recipe created");
     router.push("/");
     router.refresh();
   }

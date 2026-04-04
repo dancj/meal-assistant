@@ -30,6 +30,7 @@ All source code lives under `src/` using the Next.js App Router convention:
 - Shared clients/utilities: `src/lib/`
 - Storage abstraction: `src/lib/storage/` (repository pattern with SQLite and Supabase adapters)
 - TypeScript types: `src/types/`
+- Documented solutions: `docs/solutions/` (past bugs and best practices, organized by category with YAML frontmatter)
 
 ### Tech Stack
 

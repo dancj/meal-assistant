@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, RefreshCw, ShoppingCart, UtensilsCrossed } from "lucide-react";
+import { toast } from "sonner";
 import type { StoredMealPlan } from "@/lib/storage/types";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export default function GeneratePlanPage() {
   const [preferences, setPreferences] = useState("");
@@ -64,8 +72,11 @@ export default function GeneratePlanPage() {
       setPlan(data.plan);
       setEmailSent(data.emailSent ?? false);
       setIsDemo(data.demo ?? false);
+      toast.success("Meal plan generated!");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -82,16 +93,16 @@ export default function GeneratePlanPage() {
 
       {/* Input section */}
       <div className="space-y-3">
-        <label htmlFor="preferences" className="text-sm font-medium">
+        <Label htmlFor="preferences">
           Dietary preferences{" "}
           <span className="text-muted-foreground font-normal">(optional)</span>
-        </label>
-        <textarea
+        </Label>
+        <Textarea
           id="preferences"
           value={preferences}
           onChange={(e) => setPreferences(e.target.value)}
           placeholder="e.g., No red meat this week, kid-friendly options preferred..."
-          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm min-h-[80px] resize-y"
+          className="min-h-[80px] resize-y"
           maxLength={500}
           disabled={loading}
         />
@@ -99,24 +110,20 @@ export default function GeneratePlanPage() {
         {/* Auth secret input — shown when needed */}
         {needsAuth && (
           <div className="space-y-1">
-            <label htmlFor="secret" className="text-sm font-medium">
-              API Secret
-            </label>
-            <input
+            <Label htmlFor="secret">API Secret</Label>
+            <Input
               id="secret"
               type="password"
               value={secret}
               onChange={(e) => setSecret(e.target.value)}
               placeholder="Enter CRON_SECRET..."
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
             />
           </div>
         )}
 
-        <button
+        <Button
           onClick={handleGenerate}
           disabled={loading}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground h-9 px-4 text-sm font-medium hover:bg-primary/80 transition-all disabled:opacity-50"
         >
           {loading ? (
             <>
@@ -134,88 +141,98 @@ export default function GeneratePlanPage() {
               Generate Plan
             </>
           )}
-        </button>
+        </Button>
       </div>
 
       {/* Error */}
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 text-red-800 p-4 text-sm">
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 text-destructive p-4 text-sm">
           {error}
         </div>
       )}
+
+      <Separator />
 
       {/* Plan display */}
       {plan && (
         <div className="space-y-6">
           {/* Status badges */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 text-green-800 px-2.5 py-0.5 text-xs font-medium">
+            <Badge variant="outline">
               Week of {plan.weekOf}
-            </span>
+            </Badge>
             {isDemo && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 px-2.5 py-0.5 text-xs font-medium">
+              <Badge variant="secondary" className="bg-warning/15 text-warning">
                 Demo plan (no Gemini)
-              </span>
+              </Badge>
             )}
             {emailSent && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-800 px-2.5 py-0.5 text-xs font-medium">
+              <Badge variant="secondary" className="bg-success/15 text-success">
                 Email sent
-              </span>
+              </Badge>
             )}
           </div>
 
-          {/* Dinners */}
-          <div>
-            <h2 className="text-lg font-semibold mb-3">Dinners</h2>
-            <div className="space-y-2">
-              {plan.dinners.map((dinner) => (
-                <div
-                  key={dinner.day}
-                  className="rounded-lg border bg-card p-4 flex items-start justify-between gap-3"
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-24 shrink-0">
-                        {dinner.day}
-                      </span>
-                      <span className="font-medium">{dinner.recipeName}</span>
-                    </div>
-                    {dinner.alternativeNote && (
-                      <p className="text-xs text-muted-foreground mt-1 ml-26">
-                        {dinner.alternativeNote}
-                      </p>
-                    )}
-                  </div>
-                  <span className="text-xs text-muted-foreground shrink-0">
-                    {dinner.servings} servings
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <Tabs defaultValue="dinners">
+            <TabsList>
+              <TabsTrigger value="dinners">
+                <UtensilsCrossed className="size-4" />
+                Dinners
+              </TabsTrigger>
+              <TabsTrigger value="grocery-list">
+                <ShoppingCart className="size-4" />
+                Grocery List
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Grocery list */}
-          <div>
-            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <ShoppingCart className="size-4" />
-              Grocery List
-            </h2>
-            <div className="rounded-lg border bg-card">
-              <ul className="divide-y">
-                {plan.groceryList.map((item, i) => (
-                  <li
-                    key={i}
-                    className="px-4 py-2 flex items-center justify-between text-sm"
+            <TabsContent value="dinners">
+              <div className="space-y-2 pt-3">
+                {plan.dinners.map((dinner) => (
+                  <div
+                    key={dinner.day}
+                    className="rounded-lg border bg-card p-4 flex items-start justify-between gap-3"
                   >
-                    <span>{item.item}</span>
-                    <span className="text-muted-foreground">
-                      {item.quantity}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-24 shrink-0">
+                          {dinner.day}
+                        </span>
+                        <span className="font-medium">{dinner.recipeName}</span>
+                      </div>
+                      {dinner.alternativeNote && (
+                        <p className="text-xs text-muted-foreground mt-1 ml-26">
+                          {dinner.alternativeNote}
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {dinner.servings} servings
                     </span>
-                  </li>
+                  </div>
                 ))}
-              </ul>
-            </div>
-          </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="grocery-list">
+              <div className="pt-3">
+                <div className="rounded-lg border bg-card">
+                  <ul className="divide-y">
+                    {plan.groceryList.map((item, i) => (
+                      <li
+                        key={i}
+                        className="px-4 py-2 flex items-center justify-between text-sm"
+                      >
+                        <span>{item.item}</span>
+                        <span className="text-muted-foreground">
+                          {item.quantity}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       )}
     </div>

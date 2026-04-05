@@ -1,21 +1,12 @@
 import { NextResponse } from "next/server";
 import { getMealPlanRepo } from "@/lib/storage";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  // Auth: skip if CRON_SECRET is not configured
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret) {
-    const authHeader = request.headers.get("authorization");
-    const token = authHeader?.startsWith("Bearer ")
-      ? authHeader.slice(7)
-      : null;
-
-    if (token !== cronSecret) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  }
+  const authError = requireAuth(request);
+  if (authError) return authError;
 
   try {
     const plan = await getMealPlanRepo().getCurrent();

@@ -3,6 +3,7 @@ import type { Recipe } from "@/types/recipe";
 import type { MealPlan } from "@/types/meal-plan";
 import type {
   RecipeRepository,
+  RecipeSearchQuery,
   MealPlanRepository,
   StoredMealPlan,
 } from "./types";
@@ -15,6 +16,25 @@ export class SupabaseRecipeRepository implements RecipeRepository {
       .order("created_at", { ascending: false });
 
     if (error) throw new Error(`Failed to fetch recipes: ${error.message}`);
+    return data as Recipe[];
+  }
+
+  async search(query: RecipeSearchQuery): Promise<Recipe[]> {
+    let builder = getSupabase()
+      .from("recipes")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (query.q) {
+      builder = builder.ilike("name", `%${query.q}%`);
+    }
+
+    if (query.tag) {
+      builder = builder.contains("tags", [query.tag]);
+    }
+
+    const { data, error } = await builder;
+    if (error) throw new Error(`Failed to search recipes: ${error.message}`);
     return data as Recipe[];
   }
 

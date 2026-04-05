@@ -109,7 +109,7 @@ export default function RecipeList({ recipes }: { recipes: Recipe[] }) {
           No recipes match your search
         </p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {filtered.map((recipe) => (
             <Link
               key={recipe.id}

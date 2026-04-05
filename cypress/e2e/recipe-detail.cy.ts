@@ -48,7 +48,9 @@ describe("Recipe detail page", () => {
     cy.intercept("GET", "/api/recipes", { fixture: "recipes.json" });
 
     cy.get('[data-testid="delete-btn"]').click();
-    cy.contains("button", "Delete").last().click();
+    cy.get('[data-slot="dialog-content"]')
+      .contains("button", "Delete")
+      .click();
 
     cy.wait("@deleteRecipe");
     cy.url().should("eq", Cypress.config().baseUrl + "/");
@@ -59,7 +61,9 @@ describe("Recipe detail page", () => {
     cy.wait("@getRecipe");
 
     cy.get('[data-testid="delete-btn"]').click();
-    cy.contains("button", "Cancel").click();
+    cy.get('[data-slot="dialog-content"]')
+      .contains("button", "Cancel")
+      .click();
 
     cy.url().should("include", `/recipes/${recipeId}`);
     cy.get('[data-testid="recipe-detail"]').should("exist");

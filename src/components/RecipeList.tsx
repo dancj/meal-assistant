@@ -109,11 +109,12 @@ export default function RecipeList({ recipes }: { recipes: Recipe[] }) {
           No recipes match your search
         </p>
       ) : (
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           {filtered.map((recipe) => (
             <Link
               key={recipe.id}
               href={`/recipes/${recipe.id}`}
+              className="block"
               data-testid="recipe-list-item"
             >
               <Card className="px-5 py-4 hover:bg-accent/50 hover:border-primary/25 hover:shadow-sm transition-all cursor-pointer border-l-3 border-l-primary/30">

@@ -47,8 +47,8 @@ describe("Recipe detail page", () => {
     }).as("deleteRecipe");
     cy.intercept("GET", "/api/recipes", { fixture: "recipes.json" });
 
-    cy.on("window:confirm", () => true);
     cy.get('[data-testid="delete-btn"]').click();
+    cy.contains("button", "Delete").last().click();
 
     cy.wait("@deleteRecipe");
     cy.url().should("eq", Cypress.config().baseUrl + "/");
@@ -58,8 +58,8 @@ describe("Recipe detail page", () => {
     cy.visit(`/recipes/${recipeId}`);
     cy.wait("@getRecipe");
 
-    cy.on("window:confirm", () => false);
     cy.get('[data-testid="delete-btn"]').click();
+    cy.contains("button", "Cancel").click();
 
     cy.url().should("include", `/recipes/${recipeId}`);
     cy.get('[data-testid="recipe-detail"]').should("exist");

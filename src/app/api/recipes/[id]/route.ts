@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { pickRecipeFields, validateRecipeBody } from "@/lib/recipe-validation";
 import { getRecipeRepo } from "@/lib/storage";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -8,9 +9,12 @@ const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
   const { id } = await params;
 
   if (!UUID_REGEX.test(id)) {
@@ -42,6 +46,9 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
   const { id } = await params;
 
   if (!UUID_REGEX.test(id)) {
@@ -87,9 +94,12 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
   const { id } = await params;
 
   if (!UUID_REGEX.test(id)) {

@@ -6,6 +6,7 @@ const mockRecipeRepo = {
   create: vi.fn(),
   update: vi.fn(),
   delete: vi.fn(),
+  search: vi.fn(),
 };
 
 vi.mock("@/lib/storage", () => ({
@@ -19,9 +20,17 @@ function params(id: string) {
   return { params: Promise.resolve({ id }) };
 }
 
+const originalEnv = process.env;
+
+afterAll(() => {
+  process.env = originalEnv;
+});
+
 describe("GET /api/recipes/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env = { ...originalEnv };
+    delete process.env.CRON_SECRET;
   });
 
   it("returns 400 for invalid UUID", async () => {
@@ -74,11 +83,22 @@ describe("GET /api/recipes/[id]", () => {
     expect(response.status).toBe(500);
     expect(body.error).toBe("Failed to fetch recipe");
   });
+
+  it("returns 401 when CRON_SECRET is set and no token provided", async () => {
+    process.env.CRON_SECRET = "test-secret";
+    const response = await GET(
+      new Request("http://localhost"),
+      params(VALID_UUID)
+    );
+    expect(response.status).toBe(401);
+  });
 });
 
 describe("PUT /api/recipes/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env = { ...originalEnv };
+    delete process.env.CRON_SECRET;
   });
 
   function putRequest(body: unknown) {
@@ -178,11 +198,22 @@ describe("PUT /api/recipes/[id]", () => {
     expect(response.status).toBe(500);
     expect(body.error).toBe("Failed to update recipe");
   });
+
+  it("returns 401 when CRON_SECRET is set and no token provided", async () => {
+    process.env.CRON_SECRET = "test-secret";
+    const response = await PUT(
+      putRequest({ name: "Pasta", ingredients: [{ name: "Noodles" }] }),
+      params(VALID_UUID)
+    );
+    expect(response.status).toBe(401);
+  });
 });
 
 describe("DELETE /api/recipes/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env = { ...originalEnv };
+    delete process.env.CRON_SECRET;
   });
 
   it("returns 400 for invalid UUID", async () => {
@@ -232,5 +263,14 @@ describe("DELETE /api/recipes/[id]", () => {
 
     expect(response.status).toBe(500);
     expect(body.error).toBe("Failed to delete recipe");
+  });
+
+  it("returns 401 when CRON_SECRET is set and no token provided", async () => {
+    process.env.CRON_SECRET = "test-secret";
+    const response = await DELETE(
+      new Request("http://localhost"),
+      params(VALID_UUID)
+    );
+    expect(response.status).toBe(401);
   });
 });

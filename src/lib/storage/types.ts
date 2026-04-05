@@ -6,8 +6,14 @@ export interface StoredMealPlan extends MealPlan {
   created_at: string;
 }
 
+export interface RecipeSearchQuery {
+  q?: string;
+  tag?: string;
+}
+
 export interface RecipeRepository {
   list(): Promise<Recipe[]>;
+  search(query: RecipeSearchQuery): Promise<Recipe[]>;
   getById(id: string): Promise<Recipe | null>;
   create(
     data: Partial<Omit<Recipe, "id" | "created_at" | "updated_at">>

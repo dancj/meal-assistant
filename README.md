@@ -31,7 +31,7 @@ Automatically generate a weekly meal plan (5 dinners + grocery list) from your h
 
 ## NanoClaw Integration
 
-Meal Assistant exposes a REST API for [NanoClaw](https://github.com/dancj/nanoclaw) (personal assistant bot) to add recipes from email, search the recipe library, and fetch the weekly meal plan.
+Meal Assistant exposes a REST API for [NanoClaw](https://github.com/qwibitai/nanoclaw) (personal assistant bot) to add recipes from email, search the recipe library, and fetch the weekly meal plan.
 
 - **[Setup Guide](docs/nanoclaw-setup.md)** — Authentication, core workflows, field mapping, and error handling
 - **[API Reference](docs/api.md)** — Full endpoint documentation with request/response schemas and curl examples

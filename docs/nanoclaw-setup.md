@@ -1,6 +1,6 @@
 # NanoClaw Setup Guide
 
-Connect [NanoClaw](https://github.com/dancj/nanoclaw) (personal assistant bot) to Meal Assistant so it can add recipes from email, query the recipe library, and push the weekly meal plan to WhatsApp.
+Connect [NanoClaw](https://github.com/qwibitai/nanoclaw) (personal assistant bot) to Meal Assistant so it can add recipes from email, query the recipe library, and push the weekly meal plan to WhatsApp.
 
 ## Prerequisites
 

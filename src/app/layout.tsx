@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { CalendarDays, Plus, UtensilsCrossed } from "lucide-react";
+import { Toaster } from "@/components/ui/sonner";
 import DemoBanner from "@/components/DemoBanner";
 import "./globals.css";
 
@@ -58,6 +59,7 @@ export default function RootLayout({
           </nav>
         </header>
         <main className="max-w-3xl mx-auto px-4 py-8">{children}</main>
+        <Toaster />
       </body>
     </html>
   );

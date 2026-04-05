@@ -52,7 +52,7 @@ describe("RecipeList", () => {
     render(<RecipeList recipes={recipes} />);
     expect(screen.getByText("Pasta")).toBeInTheDocument();
     expect(screen.getByText("Tacos")).toBeInTheDocument();
-    expect(screen.getByText("4 servings")).toBeInTheDocument();
+    expect(screen.getByText("4")).toBeInTheDocument();
   });
 
   it("filters by search text", async () => {

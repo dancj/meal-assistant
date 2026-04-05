@@ -2,11 +2,36 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, BookOpen } from "lucide-react";
+import { Search, BookOpen, Clock, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import type { Recipe } from "@/types/recipe";
+
+const CUISINE_EMOJI: Record<string, string> = {
+  asian: "🍜",
+  italian: "🍝",
+  mexican: "🌮",
+  indian: "🍛",
+  japanese: "🍱",
+  chinese: "🥡",
+  thai: "🍲",
+  mediterranean: "🫒",
+  french: "🥐",
+  korean: "🥘",
+  seafood: "🐟",
+  vegetarian: "🥬",
+  salad: "🥗",
+  curry: "🍛",
+  "comfort-food": "🫕",
+};
+
+function getRecipeEmoji(tags: string[]): string {
+  for (const tag of tags) {
+    if (CUISINE_EMOJI[tag]) return CUISINE_EMOJI[tag];
+  }
+  return "🍽️";
+}
 
 export default function RecipeList({ recipes }: { recipes: Recipe[] }) {
   const [search, setSearch] = useState("");
@@ -84,31 +109,47 @@ export default function RecipeList({ recipes }: { recipes: Recipe[] }) {
           No recipes match your search
         </p>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {filtered.map((recipe) => (
             <Link
               key={recipe.id}
               href={`/recipes/${recipe.id}`}
               data-testid="recipe-list-item"
             >
-              <Card className="px-4 py-3 hover:bg-accent/60 hover:border-primary/20 transition-colors cursor-pointer border-l-2 border-l-primary/20">
-                <div className="flex items-center justify-between">
-                  <h2 className="font-medium">{recipe.name}</h2>
-                  {recipe.servings && (
-                    <span className="text-xs text-muted-foreground">
-                      {recipe.servings} servings
-                    </span>
-                  )}
-                </div>
-                {recipe.tags.length > 0 && (
-                  <div className="flex gap-1 mt-1.5">
-                    {recipe.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-[11px] h-4 px-1.5 text-primary/80">
-                        {tag}
-                      </Badge>
-                    ))}
+              <Card className="px-5 py-4 hover:bg-accent/50 hover:border-primary/25 hover:shadow-sm transition-all cursor-pointer border-l-3 border-l-primary/30">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl leading-none mt-0.5" aria-hidden="true">
+                    {getRecipeEmoji(recipe.tags)}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <h2 className="font-medium truncate">{recipe.name}</h2>
+                      <div className="flex items-center gap-3 shrink-0 text-xs text-muted-foreground">
+                        {(recipe.prep_time || recipe.cook_time) && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="size-3" />
+                            {[recipe.prep_time && `${recipe.prep_time}m prep`, recipe.cook_time && `${recipe.cook_time}m cook`].filter(Boolean).join(" + ")}
+                          </span>
+                        )}
+                        {recipe.servings && (
+                          <span className="flex items-center gap-1">
+                            <Users className="size-3" />
+                            {recipe.servings}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {recipe.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {recipe.tags.map((tag) => (
+                          <Badge key={tag} variant="secondary" className="text-[11px] h-5 px-2 text-primary/80">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </Card>
             </Link>
           ))}

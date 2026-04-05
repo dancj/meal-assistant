@@ -22,10 +22,27 @@ export default function GeneratePlanPage() {
   const [needsAuth, setNeedsAuth] = useState(false);
   const [secret, setSecret] = useState("");
 
-  // Check if auth is required by attempting a preflight
+  // Restore saved preferences and auth secret on mount
   useEffect(() => {
-    const saved = localStorage.getItem("meal-assistant-secret");
-    if (saved) setSecret(saved);
+    const savedSecret = localStorage.getItem("meal-assistant-secret");
+    if (savedSecret) setSecret(savedSecret);
+
+    const savedPrefs = localStorage.getItem("meal-assistant-preferences");
+    if (savedPrefs !== null) {
+      setPreferences(savedPrefs);
+    } else {
+      // First visit — fetch env var default
+      fetch("/api/preferences/default")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.preferences) {
+            setPreferences(data.preferences);
+          }
+        })
+        .catch(() => {
+          // Silently ignore — textarea stays empty
+        });
+    }
   }, []);
 
   async function handleGenerate() {
@@ -100,12 +117,22 @@ export default function GeneratePlanPage() {
         <Textarea
           id="preferences"
           value={preferences}
-          onChange={(e) => setPreferences(e.target.value)}
+          onChange={(e) => {
+            setPreferences(e.target.value);
+            try {
+              localStorage.setItem("meal-assistant-preferences", e.target.value);
+            } catch {
+              // localStorage unavailable (private browsing) — ignore
+            }
+          }}
           placeholder="e.g., No red meat this week, kid-friendly options preferred..."
           className="min-h-[80px] resize-y"
           maxLength={500}
           disabled={loading}
         />
+        <p className="text-xs text-muted-foreground text-right">
+          {preferences.length}/500
+        </p>
 
         {/* Auth secret input — shown when needed */}
         {needsAuth && (

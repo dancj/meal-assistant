@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
-import { CalendarDays, Plus, UtensilsCrossed } from "lucide-react";
+import { CalendarDays, ClipboardList, Plus, UtensilsCrossed } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import DemoBanner from "@/components/DemoBanner";
 import "./globals.css";
@@ -39,6 +39,14 @@ export default function RootLayout({
               Meal Assistant
             </Link>
             <div className="flex items-center gap-2">
+              <Link
+                href="/plans"
+                className="inline-flex shrink-0 items-center justify-center gap-1 rounded-lg border border-primary/20 text-primary h-7 px-2.5 text-[0.8rem] font-medium hover:bg-primary/5 transition-all"
+                data-testid="meal-plans-link"
+              >
+                <ClipboardList className="size-3.5" />
+                Meal Plans
+              </Link>
               <Link
                 href="/generate"
                 className="inline-flex shrink-0 items-center justify-center gap-1 rounded-lg border border-primary/20 text-primary h-7 px-2.5 text-[0.8rem] font-medium hover:bg-primary/5 transition-all"

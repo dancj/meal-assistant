@@ -109,7 +109,7 @@ export default function RecipeList({ recipes }: { recipes: Recipe[] }) {
           No recipes match your search
         </p>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2">
           {filtered.map((recipe) => (
             <Link
               key={recipe.id}

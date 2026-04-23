@@ -1,10 +1,11 @@
 name: Cypress E2E Tests
 
+# Disabled on push/PR until #67 restores specs against the new UI. Cypress 10+
+# exits non-zero when no spec files are found, which would turn this workflow
+# red on every commit. Manual dispatch is retained so the workflow can be
+# exercised once specs return.
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   cypress:
@@ -22,9 +23,6 @@ jobs:
 
       - name: Build
         run: npm run build
-        env:
-          SUPABASE_URL: http://localhost:54321
-          SUPABASE_SERVICE_ROLE_KEY: test-key
 
       - name: Run Cypress
         uses: cypress-io/github-action@v6
@@ -32,9 +30,6 @@ jobs:
           start: npm start
           wait-on: http://localhost:3000
           wait-on-timeout: 30
-        env:
-          SUPABASE_URL: http://localhost:54321
-          SUPABASE_SERVICE_ROLE_KEY: test-key
 
       - name: Upload screenshots on failure
         uses: actions/upload-artifact@v4

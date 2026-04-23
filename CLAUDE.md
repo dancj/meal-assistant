@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Meal Assistant: automatically generates a weekly meal plan (5 dinners + grocery list) from household recipes and delivers it via email. Designed to run as a scheduled GitHub Action calling a Vercel-hosted API route, with an on-demand trigger option. Can run fully standalone with local SQLite storage or with Supabase.
+Meal Assistant is a personal meal-planning app — eventually a weekly plan + grocery list pulled from a private recipe repo. The original Supabase + Gemini + cron stack was stripped in #63; the replacement stack is being built across issues #64–#70 (see "Active Work" below). Today, this repo is a Next.js shell with shadcn UI primitives and the Resend library — no database, no LLM, no cron.
+
+Do not reintroduce Supabase, SQLite, `better-sqlite3`, `@google/genai`, or the weekly GitHub Actions cron. Recipes live in a private GitHub repo (fetched via the API in #64), generation runs through Claude (#66), and email is optional (#70).
 
 ## Commands
 
@@ -14,40 +16,45 @@ Meal Assistant: automatically generates a weekly meal plan (5 dinners + grocery 
 - `npm run test` — Run unit tests (Vitest)
 - `npm run test:watch` — Run tests in watch mode
 - `npm start` — Start production server
+- `npm run cypress:open` / `npm run cypress:run` — Cypress e2e (interactive / headless)
+- `npm run e2e` — Boot dev server + run Cypress headless
 
 ## Architecture
 
 - **Framework:** Next.js 15 with App Router, React 19, TypeScript (strict mode)
 - **Styling:** Tailwind CSS v4 via PostCSS (CSS-based config with `@theme` directives, no `tailwind.config.ts`)
+- **UI primitives:** shadcn on top of `@base-ui/react`
 - **Path alias:** `@/*` maps to `./src/*`
 - **Deployment:** Vercel (free tier)
 
 ### Source Layout
 
-All source code lives under `src/` using the Next.js App Router convention:
-- Pages and layouts: `src/app/`
-- API routes: `src/app/api/[route]/route.ts`
-- Shared clients/utilities: `src/lib/`
-- Storage abstraction: `src/lib/storage/` (repository pattern with SQLite and Supabase adapters)
-- TypeScript types: `src/types/`
-- Documented solutions: `docs/solutions/` (past bugs and best practices, organized by category with YAML frontmatter)
+All source code lives under `src/`:
+- `src/app/` — pages, layouts, and future API routes (`src/app/api/[route]/route.ts`)
+- `src/components/` — UI components (shadcn primitives under `src/components/ui/`)
+- `src/lib/` — shared utilities. Currently: `resend.ts` (lazy Resend client factory, retained for #70), `email.ts` (`parseRecipients` helper), `utils.ts` (`cn` className merger)
+- `src/test/` — Vitest setup
+- `docs/plans/` — dated implementation plans
+- `docs/brainstorms/` — requirements / discovery docs
+- `docs/solutions/` — past bugs and best practices, organized by category with YAML frontmatter
+- `docs/design-system.md` — design system reference
 
-### Tech Stack
+Feature-specific directories (`src/types/`, `src/lib/storage/`, etc.) will be reintroduced by the feature PRs that need them. Do not pre-create them.
 
-- **Storage:** SQLite via `better-sqlite3` (local/default) or Supabase Postgres (when configured) — recipe + meal plan database. Auto-selects based on whether `SUPABASE_URL` is set.
-- **LLM:** Google Gemini via `@google/genai` — meal plan generation
-- **Email:** Resend via `resend` — meal plan delivery
-- **Automation:** GitHub Actions (weekly cron) + on-demand API endpoint + UI trigger at `/generate`
+### Active Work
 
-### Core Workflow
+The new stack is being built feature-by-feature. Each open issue owns its own endpoint, env vars, types, and docs:
 
-1. Trigger fires (GitHub Actions weekly cron, on-demand POST, or UI at `/generate`)
-2. `POST /api/generate-plan` fetches recipes from storage (SQLite or Supabase)
-3. Sends recipes + dietary preferences to Google Gemini
-4. Gemini returns structured JSON: 5 dinners + consolidated grocery list
-5. Plan is persisted to storage and emailed via Resend
-6. `GET /api/plan/current` returns the most recent plan
+- **#64** — `/api/recipes`: read markdown recipes from a private GitHub repo (`GITHUB_PAT`, `RECIPES_REPO`, `RECIPES_PATH`)
+- **#65** — `/api/deals`: Safeway + Aldi deals via Flipp backend (`SAFEWAY_ZIP`, `ALDI_ZIP`)
+- **#66** — `/api/generate-plan`: Claude-powered plan generation with store context (`ANTHROPIC_API_KEY`)
+- **#67** — Single-page UI: deals sidebar, 5 meal cards, store-grouped grocery list
+- **#68** — `/api/log`: meal logging to monthly files in the recipes repo
+- **#69** — Pantry awareness: read `/pantry.md`, exclude staples from grocery list
+- **#70** — Optional `/api/email` via Resend, gated on `RESEND_API_KEY`
+
+When starting work, check the relevant issue for its shape contracts (recipe schema, meal plan schema, etc.) — they are the source of truth, not old plan files.
 
 ### Environment Variables
 
-See `.env.example` for keys. The app runs with zero config (SQLite + demo data). Optional: Supabase credentials, Gemini API key, Resend API key, email config, and CRON_SECRET for endpoint protection.
+See `.env.example`. Currently only `RESEND_*` keys are listed (and they are only consumed once #70 lands). Each feature issue adds the env vars it consumes in the same PR that introduces the consumer.

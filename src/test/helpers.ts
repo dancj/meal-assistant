@@ -1,3 +1,1 @@
-// Test helpers
-// Note: createSupabaseMock was removed after migrating from direct Supabase
-// calls to the repository pattern. Tests now mock @/lib/storage directly.
+// Test helpers — currently empty. Add shared test utilities here as needed.

@@ -30,9 +30,9 @@ Do not reintroduce Supabase, SQLite, `better-sqlite3`, `@google/genai`, or the w
 ### Source Layout
 
 All source code lives under `src/`:
-- `src/app/` — pages, layouts, and future API routes (`src/app/api/[route]/route.ts`)
+- `src/app/` — pages, layouts, and API routes (`src/app/api/[route]/route.ts`). Implemented routes: `GET /api/recipes` (#64).
 - `src/components/` — UI components (shadcn primitives under `src/components/ui/`)
-- `src/lib/` — shared utilities. Currently: `resend.ts` (lazy Resend client factory, retained for #70), `email.ts` (`parseRecipients` helper), `utils.ts` (`cn` className merger)
+- `src/lib/` — shared utilities. Currently: `recipes/` (GitHub-backed recipe reader — `types.ts`, `parse.ts`, `github.ts`), `resend.ts` (lazy Resend client factory, retained for #70), `email.ts` (`parseRecipients` helper), `utils.ts` (`cn` className merger)
 - `src/test/` — Vitest setup
 - `docs/plans/` — dated implementation plans
 - `docs/brainstorms/` — requirements / discovery docs
@@ -45,7 +45,7 @@ Feature-specific directories (`src/types/`, `src/lib/storage/`, etc.) will be re
 
 The new stack is being built feature-by-feature. Each open issue owns its own endpoint, env vars, types, and docs:
 
-- **#64** — `/api/recipes`: read markdown recipes from a private GitHub repo (`GITHUB_PAT`, `RECIPES_REPO`, `RECIPES_PATH`)
+- **#64** — `/api/recipes`: reads markdown recipes from a private GitHub repo (`GITHUB_PAT`, `RECIPES_REPO`, `RECIPES_PATH`). **Implemented.** Recipe logic lives in `src/lib/recipes/` (pure parser + fetcher); the route is a thin error-mapping layer. Recipes are non-recursive — one directory depth, `.md` files only, dotfiles filtered.
 - **#65** — `/api/deals`: Safeway + Aldi deals via Flipp backend (`SAFEWAY_ZIP`, `ALDI_ZIP`)
 - **#66** — `/api/generate-plan`: Claude-powered plan generation with store context (`ANTHROPIC_API_KEY`)
 - **#67** — Single-page UI: deals sidebar, 5 meal cards, store-grouped grocery list
@@ -57,4 +57,11 @@ When starting work, check the relevant issue for its shape contracts (recipe sch
 
 ### Environment Variables
 
-See `.env.example`. Currently only `RESEND_*` keys are listed (and they are only consumed once #70 lands). Each feature issue adds the env vars it consumes in the same PR that introduces the consumer.
+See `.env.example`. Currently in use:
+
+- `GITHUB_PAT` (required by `/api/recipes`) — fine-grained PAT with Contents: Read scope on the recipes repo. Never interpolate its value into error messages.
+- `RECIPES_REPO` (required by `/api/recipes`) — `owner/name`, e.g. `your-username/your-recipes`.
+- `RECIPES_PATH` (required by `/api/recipes`) — directory inside the repo; empty string means repo root. Non-recursive.
+- `RESEND_*` — listed but not consumed until #70 adds `/api/email`.
+
+Each future feature issue adds the env vars it consumes in the same PR that introduces the consumer.

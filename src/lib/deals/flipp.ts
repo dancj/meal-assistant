@@ -1,6 +1,6 @@
 import { FlippNetworkError, FlippUpstreamError } from "./errors";
 import { parseFlippItem } from "./parse";
-import { MERCHANTS, type Deal, type Store } from "./types";
+import { MERCHANTS, STORES, type Deal, type Store } from "./types";
 
 const FLIPP_SEARCH_URL = "https://backflipp.wishabi.com/flipp/items/search";
 const CACHE_TTL_SECONDS = 6 * 60 * 60;
@@ -69,4 +69,77 @@ export async function fetchDealsFromFlipp(
     if (deal !== null) deals.push(deal);
   }
   return deals;
+}
+
+export interface FulfilledStoreOutcome {
+  store: Store;
+  status: "fulfilled";
+  durationMs: number;
+  deals: Deal[];
+}
+
+export interface RejectedStoreOutcome {
+  store: Store;
+  status: "rejected";
+  durationMs: number;
+  error: unknown;
+}
+
+export type StoreOutcome = FulfilledStoreOutcome | RejectedStoreOutcome;
+
+export interface AllDealsResult {
+  deals: Deal[];
+  perStore: StoreOutcome[];
+}
+
+export interface FetchAllDealsInput {
+  safewayZip: string;
+  aldiZip: string;
+}
+
+async function timed(
+  store: Store,
+  task: () => Promise<Deal[]>,
+): Promise<StoreOutcome> {
+  const startedAt = Date.now();
+  try {
+    const deals = await task();
+    return {
+      store,
+      status: "fulfilled",
+      durationMs: Date.now() - startedAt,
+      deals,
+    };
+  } catch (error) {
+    return {
+      store,
+      status: "rejected",
+      durationMs: Date.now() - startedAt,
+      error,
+    };
+  }
+}
+
+export async function fetchAllDeals({
+  safewayZip,
+  aldiZip,
+}: FetchAllDealsInput): Promise<AllDealsResult> {
+  const zipByStore: Record<Store, string> = {
+    safeway: safewayZip,
+    aldi: aldiZip,
+  };
+
+  const perStore = await Promise.all(
+    STORES.map((store) =>
+      timed(store, () => fetchDealsFromFlipp(store, zipByStore[store])),
+    ),
+  );
+
+  const deals: Deal[] = [];
+  for (const outcome of perStore) {
+    if (outcome.status === "fulfilled") {
+      deals.push(...outcome.deals);
+    }
+  }
+  return { deals, perStore };
 }

@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchDealsFromFlipp } from "./flipp";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { fetchAllDeals, fetchDealsFromFlipp } from "./flipp";
 import { FlippNetworkError, FlippUpstreamError } from "./errors";
 
 type FetchArgs = Parameters<typeof fetch>;
@@ -259,5 +259,153 @@ describe("fetchDealsFromFlipp", () => {
       expect(abortedSignal).not.toBeNull();
       expect(abortedSignal!.aborted).toBe(true);
     });
+  });
+});
+
+describe("fetchAllDeals", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("runs both store fetches concurrently and concatenates in safeway,aldi order", async () => {
+    let peakConcurrent = 0;
+    let inFlight = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: FetchArgs[0]) => {
+        inFlight += 1;
+        peakConcurrent = Math.max(peakConcurrent, inFlight);
+        // Yield so both fetches can start before either resolves.
+        await Promise.resolve();
+        await Promise.resolve();
+        inFlight -= 1;
+        const url = String(input);
+        if (url.includes("q=safeway")) {
+          return makeResponse({
+            items: [
+              {
+                merchant_name: "Safeway",
+                name: "Apples",
+                current_price: "1.99",
+              },
+            ],
+          });
+        }
+        return makeResponse({
+          items: [
+            { merchant_name: "ALDI", name: "Bananas", current_price: "0.49" },
+          ],
+        });
+      }),
+    );
+
+    const result = await fetchAllDeals({
+      safewayZip: "12345",
+      aldiZip: "34238",
+    });
+
+    expect(peakConcurrent).toBe(2);
+    expect(result.perStore.map((p) => p.store)).toEqual(["safeway", "aldi"]);
+    expect(result.perStore.every((p) => p.status === "fulfilled")).toBe(true);
+    expect(result.deals.map((d) => d.productName)).toEqual(["Apples", "Bananas"]);
+  });
+
+  it("returns partial deals when one store fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: FetchArgs[0]) => {
+        const url = String(input);
+        if (url.includes("q=safeway")) {
+          return makeResponse({ items: [safewayItem()] });
+        }
+        return makeResponse("upstream error", { status: 503 });
+      }),
+    );
+
+    const result = await fetchAllDeals({
+      safewayZip: "12345",
+      aldiZip: "34238",
+    });
+
+    expect(result.perStore).toHaveLength(2);
+    expect(result.perStore[0].status).toBe("fulfilled");
+    expect(result.perStore[1].status).toBe("rejected");
+    expect(result.deals).toHaveLength(1);
+    expect(result.deals[0].store).toBe("safeway");
+
+    const rejected = result.perStore[1];
+    if (rejected.status !== "rejected") throw new Error("expected rejected");
+    expect(rejected.error).toBeInstanceOf(FlippUpstreamError);
+  });
+
+  it("returns empty deals with both rejected when both stores fail", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: FetchArgs[0]) => {
+        const url = String(input);
+        if (url.includes("q=safeway")) {
+          // Reject via network error
+          throw new Error("dns failure");
+        }
+        return makeResponse("upstream", { status: 500 });
+      }),
+    );
+
+    const result = await fetchAllDeals({
+      safewayZip: "12345",
+      aldiZip: "34238",
+    });
+
+    expect(result.deals).toEqual([]);
+    expect(result.perStore.every((p) => p.status === "rejected")).toBe(true);
+    const safeway = result.perStore[0];
+    const aldi = result.perStore[1];
+    if (safeway.status !== "rejected" || aldi.status !== "rejected") {
+      throw new Error("expected both rejected");
+    }
+    expect(safeway.error).toBeInstanceOf(FlippNetworkError);
+    expect(aldi.error).toBeInstanceOf(FlippUpstreamError);
+  });
+
+  it("records a durationMs on every outcome", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => makeResponse({ items: [] })),
+    );
+
+    const result = await fetchAllDeals({
+      safewayZip: "12345",
+      aldiZip: "34238",
+    });
+
+    for (const outcome of result.perStore) {
+      expect(typeof outcome.durationMs).toBe("number");
+      expect(outcome.durationMs).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it("returns an empty deals list from a store whose flyer has no matching items", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: FetchArgs[0]) => {
+        const url = String(input);
+        if (url.includes("q=safeway")) {
+          return makeResponse({ items: [] });
+        }
+        return makeResponse({ items: [{ merchant_name: "ALDI", name: "Rice" }] });
+      }),
+    );
+
+    const result = await fetchAllDeals({
+      safewayZip: "12345",
+      aldiZip: "34238",
+    });
+
+    expect(result.perStore[0].status).toBe("fulfilled");
+    if (result.perStore[0].status !== "fulfilled") return;
+    expect(result.perStore[0].deals).toEqual([]);
+    expect(result.deals).toHaveLength(1);
+    expect(result.deals[0].store).toBe("aldi");
   });
 });

@@ -20,11 +20,23 @@ No database, LLM, or scheduled jobs exist in the tree today. Each capability lan
 git clone https://github.com/dancj/meal-assistant.git
 cd meal-assistant
 npm install
-cp .env.example .env.local   # only RESEND_* keys, used once #70 lands
+cp .env.example .env.local
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) — you will see a placeholder page until feature work resumes.
+
+### Environment & API keys
+
+Each implemented endpoint pulls from `.env.local`:
+
+| Var | Required by | Notes |
+| --- | --- | --- |
+| `GITHUB_PAT` | `/api/recipes` | Fine-grained PAT with Contents: Read on your recipes repo. |
+| `RECIPES_REPO`, `RECIPES_PATH` | `/api/recipes` | `owner/name` and the directory inside the repo. |
+| `SAFEWAY_ZIP`, `ALDI_ZIP` | `/api/deals` | Optional; 5-digit ZIPs (default `34238`). |
+| `ANTHROPIC_API_KEY` | `/api/generate-plan` | **Paid** Anthropic API key — no free tier. Get one at [console.anthropic.com](https://console.anthropic.com). A typical generation costs a few cents in tokens. |
+| `RESEND_*` | `/api/email` (#70) | Listed in `.env.example` but not consumed yet. |
 
 ## Scripts
 

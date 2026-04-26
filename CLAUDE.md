@@ -19,6 +19,29 @@ Do not reintroduce Supabase, SQLite, `better-sqlite3`, `@google/genai`, or the w
 - `npm run cypress:open` / `npm run cypress:run` — Cypress e2e (interactive / headless)
 - `npm run e2e` — Boot dev server + run Cypress headless
 
+## Test-Driven Development
+
+**All `feat:` and `fix:` work MUST follow TDD red-green-refactor discipline.** This applies to all implementation — whether initiated by `/ce-work`, `/ce-plan`, subagents, or direct coding.
+
+- **Unit / component / route-handler tests:** Follow `meal-assistant:tdd-vitest` — write a failing Vitest test before writing implementation code, make it pass with the minimum code, then refactor.
+- **End-to-end tests:** Follow `meal-assistant:tdd-cypress` — write a failing Cypress test that defines the user-visible acceptance criteria before building the feature.
+- **Bug fixes:** Reproduce the bug as a failing test first, at whichever level it manifests, then fix it.
+
+Plans created by `/ce-plan` do NOT need to explicitly list RED/GREEN/REFACTOR steps — the TDD cycle is implicit in all implementation work. The plan defines *what* to build; TDD defines *how* to build it. Cycles live in commits or the task tracker, not the plan body.
+
+**When implementing any plan unit or task:**
+
+1. Write a failing test that describes the expected behavior
+2. Run the relevant suite (`npm test -- <path>` or `npm run cypress:run`) and confirm it fails for the right reason
+3. Write the minimum implementation to make it pass
+4. Run the full suite to confirm nothing else broke
+5. Refactor on green; never refactor on red
+6. Commit when the unit is complete (test + implementation in the same logical commit, or test commit immediately followed by green commit — your call)
+
+**Skip TDD only for:** configuration changes, boilerplate wiring, pure styling / Tailwind class changes, trivial renames, doc / plan / fixture updates, and exploratory spikes.
+
+The skill files at `.claude/skills/meal-assistant/tdd-vitest/SKILL.md` and `.claude/skills/meal-assistant/tdd-cypress/SKILL.md` are the source of truth — read them before starting feature or fix work.
+
 ## Architecture
 
 - **Framework:** Next.js 15 with App Router, React 19, TypeScript (strict mode)

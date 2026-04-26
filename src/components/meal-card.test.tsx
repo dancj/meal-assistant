@@ -22,6 +22,7 @@ function renderCard(props: Partial<React.ComponentProps<typeof MealCard>> = {}) 
       meal={meal()}
       index={0}
       isSwapping={false}
+      thumb={null}
       onSwap={onSwap}
       onThumbsUp={onThumbsUp}
       onThumbsDown={onThumbsDown}
@@ -85,5 +86,23 @@ describe("MealCard", () => {
     expect(swap).toBeDisabled();
     fireEvent.click(swap);
     expect(onSwap).not.toHaveBeenCalled();
+  });
+
+  it("reflects thumb='up' with aria-pressed=true on the up button", () => {
+    renderCard({ thumb: "up" });
+    expect(screen.getByRole("button", { name: /thumbs up/i })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(
+      screen.getByRole("button", { name: /thumbs down/i }),
+    ).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("reflects thumb='down' with aria-pressed=true on the down button", () => {
+    renderCard({ thumb: "down" });
+    expect(
+      screen.getByRole("button", { name: /thumbs down/i }),
+    ).toHaveAttribute("aria-pressed", "true");
   });
 });

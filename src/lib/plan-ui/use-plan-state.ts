@@ -7,13 +7,21 @@ import {
   fetchRecentLogs,
   fetchRecipes,
   generatePlan,
+  postMealLog,
   ApiError,
 } from "@/lib/api/client";
 import type { Deal } from "@/lib/deals/types";
 import type { MealLog } from "@/lib/log/types";
 import type { Recipe } from "@/lib/recipes/types";
 import type { GeneratePlanInput } from "@/lib/plan/types";
-import { initialState, planReducer, type PlanState } from "./state";
+import {
+  initialState,
+  planReducer,
+  thumbsToLog,
+  type PlanState,
+  type Thumb,
+} from "./state";
+import { currentWeekStart } from "./week";
 
 function errorMessage(err: unknown): string {
   if (err instanceof ApiError) return err.message;
@@ -25,7 +33,17 @@ export interface UsePlanStateResult {
   state: PlanState;
   regenerate: () => void;
   swap: (index: number) => void;
+  setThumb: (index: number, kind: "up" | "down") => void;
+  setSkipReason: (reason: string) => void;
   retry: () => void;
+}
+
+function logCurrentSnapshot(state: PlanState) {
+  if (state.status !== "ready") return;
+  const entry = thumbsToLog(state);
+  void postMealLog(entry).catch((err: unknown) => {
+    toast.error("Couldn't save thumb", { description: errorMessage(err) });
+  });
 }
 
 export function usePlanState(): UsePlanStateResult {
@@ -43,9 +61,6 @@ export function usePlanState(): UsePlanStateResult {
       [recipes, deals, recentLogs] = await Promise.all([
         fetchRecipes(),
         fetchDeals(),
-        // Logs are nice-to-have for plan quality but the page should still
-        // render if /api/log fails (e.g., no /log/ directory yet); degrade to []
-        // and surface a non-blocking toast.
         fetchRecentLogs(8).catch((err: unknown) => {
           toast.warning("Couldn't load recent logs", {
             description: errorMessage(err),
@@ -65,7 +80,14 @@ export function usePlanState(): UsePlanStateResult {
     };
     try {
       const plan = await generatePlan(input);
-      dispatch({ type: "INIT_OK", recipes, deals, recentLogs, plan });
+      dispatch({
+        type: "INIT_OK",
+        recipes,
+        deals,
+        recentLogs,
+        plan,
+        currentWeek: currentWeekStart(),
+      });
     } catch (err) {
       dispatch({ type: "INIT_FAILED", error: errorMessage(err) });
     }
@@ -109,11 +131,31 @@ export function usePlanState(): UsePlanStateResult {
       });
   }, []);
 
+  const setThumb = useCallback((index: number, kind: "up" | "down") => {
+    const current = stateRef.current;
+    if (current.status !== "ready") return;
+    const existing = current.thumbs[index];
+    const nextValue: Thumb = existing === kind ? null : kind;
+    dispatch({ type: "SET_THUMB", index, value: nextValue });
+    // Use freshly computed state (post-dispatch) for the POST snapshot.
+    logCurrentSnapshot({
+      ...current,
+      thumbs: current.thumbs.map((t, i) => (i === index ? nextValue : t)),
+    });
+  }, []);
+
+  const setSkipReason = useCallback((reason: string) => {
+    const current = stateRef.current;
+    if (current.status !== "ready") return;
+    dispatch({ type: "SET_SKIP_REASON", reason });
+    logCurrentSnapshot({ ...current, skipReason: reason });
+  }, []);
+
   const retry = useCallback(() => {
     if (stateRef.current.status !== "error") return;
     dispatch({ type: "RETRY" });
     void runInit();
   }, [runInit]);
 
-  return { state, regenerate, swap, retry };
+  return { state, regenerate, swap, setThumb, setSkipReason, retry };
 }

@@ -6,13 +6,10 @@ import { GroceryList } from "@/components/grocery-list";
 import { MealCard } from "@/components/meal-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePlanState } from "@/lib/plan-ui/use-plan-state";
-
-// TODO(#68): wire thumbs handlers to /api/log
-function noopThumbs() {
-  /* logging lands in #68 */
-}
 
 function LoadingState() {
   return (
@@ -59,14 +56,16 @@ function ErrorState({
 }
 
 export default function Home() {
-  const { state, regenerate, swap, retry } = usePlanState();
+  const { state, regenerate, swap, setThumb, setSkipReason, retry } =
+    usePlanState();
 
   if (state.status === "loading") return <LoadingState />;
   if (state.status === "error") {
     return <ErrorState message={state.error} onRetry={retry} />;
   }
 
-  const { deals, plan, generating } = state;
+  const { deals, plan, generating, thumbs, skipReason } = state;
+  const anyDownThumbs = thumbs.some((t) => t === "down");
 
   return (
     <div className="grid gap-6 md:grid-cols-12">
@@ -95,12 +94,34 @@ export default function Home() {
               meal={meal}
               index={index}
               isSwapping={generating}
+              thumb={thumbs[index] ?? null}
               onSwap={swap}
-              onThumbsUp={noopThumbs}
-              onThumbsDown={noopThumbs}
+              onThumbsUp={(i) => setThumb(i, "up")}
+              onThumbsDown={(i) => setThumb(i, "down")}
             />
           ))}
         </div>
+
+        {anyDownThumbs && (
+          <div
+            className="rounded-md bg-muted/40 p-3 ring-1 ring-foreground/5"
+            data-testid="skip-reason"
+          >
+            <Label
+              htmlFor="skip-reason-input"
+              className="text-sm text-muted-foreground"
+            >
+              Why did you skip this week? (optional)
+            </Label>
+            <Input
+              id="skip-reason-input"
+              value={skipReason}
+              onChange={(e) => setSkipReason(e.target.value)}
+              placeholder="e.g. ran out of time, kid was sick"
+              className="mt-1.5"
+            />
+          </div>
+        )}
 
         <GroceryList items={plan.groceryList} />
       </section>

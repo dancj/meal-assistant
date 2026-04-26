@@ -6,10 +6,16 @@ import {
   MissingEnvVarError,
 } from "@/lib/recipes/github";
 import { RecipeParseError } from "@/lib/recipes/parse";
+import { DEMO_RECIPES, isDemoMode } from "@/lib/demo/fixtures";
 
 export const runtime = "nodejs";
 
 export async function GET(): Promise<Response> {
+  if (isDemoMode()) {
+    return Response.json(DEMO_RECIPES, {
+      headers: { "X-Demo-Mode": "1" },
+    });
+  }
   try {
     const recipes = await fetchRecipesFromGitHub();
     return Response.json(recipes);

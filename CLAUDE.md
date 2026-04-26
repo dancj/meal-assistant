@@ -32,7 +32,7 @@ Do not reintroduce Supabase, SQLite, `better-sqlite3`, `@google/genai`, or the w
 All source code lives under `src/`:
 - `src/app/` — pages, layouts, and API routes (`src/app/api/[route]/route.ts`). Implemented routes: `GET /api/recipes` (#64), `GET /api/deals` (#65), `POST /api/generate-plan` (#66).
 - `src/components/` — UI components: `deals-sidebar.tsx`, `meal-card.tsx`, `grocery-list.tsx` (single-page UI from #67), plus shadcn primitives under `src/components/ui/`
-- `src/lib/` — shared utilities. Currently: `api/` (typed client wrappers `fetchRecipes`, `fetchDeals`, `generatePlan` + `ApiError`), `recipes/` (GitHub-backed recipe reader — `types.ts`, `parse.ts`, `github.ts`), `deals/` (Flipp-backed Safeway + Aldi deals — `types.ts`, `parse.ts`, `flipp.ts`, `env.ts`, `errors.ts`), `plan/` (Claude-powered meal-plan generator — `types.ts`, `errors.ts`, `anthropic.ts`, `prompt.ts`, `validate.ts`, `generate.ts`), `plan-ui/` (client-side state machine + `usePlanState` React hook for the single-page UI), `resend.ts` (lazy Resend client factory, retained for #70), `email.ts` (`parseRecipients` helper), `utils.ts` (`cn` className merger)
+- `src/lib/` — shared utilities. Currently: `api/` (typed client wrappers `fetchRecipes`, `fetchDeals`, `generatePlan` + `ApiError`), `recipes/` (GitHub-backed recipe reader — `types.ts`, `parse.ts`, `github.ts`), `deals/` (Flipp-backed Safeway + Aldi deals — `types.ts`, `parse.ts`, `flipp.ts`, `env.ts`, `errors.ts`), `plan/` (Claude-powered meal-plan generator — `types.ts`, `errors.ts`, `anthropic.ts`, `prompt.ts`, `validate.ts`, `generate.ts`), `plan-ui/` (client-side state machine + `usePlanState` React hook for the single-page UI), `demo/fixtures.ts` (sample recipes/deals/plan returned when `DEMO_MODE=1`), `resend.ts` (lazy Resend client factory, retained for #70), `email.ts` (`parseRecipients` helper), `utils.ts` (`cn` className merger)
 - `src/test/` — Vitest setup
 - `docs/plans/` — dated implementation plans
 - `docs/brainstorms/` — requirements / discovery docs
@@ -65,5 +65,6 @@ See `.env.example`. Currently in use:
 - `SAFEWAY_ZIP`, `ALDI_ZIP` (optional, used by `/api/deals`) — 5-digit ZIPs for Flipp flyer lookup; both default to `34238` when unset. Invalid values return 500.
 - `ANTHROPIC_API_KEY` (required by `/api/generate-plan`) — Anthropic API key (paid; no free tier). Get one at https://console.anthropic.com. Never interpolate its value into error messages.
 - `RESEND_*` — listed but not consumed until #70 adds `/api/email`.
+- `DEMO_MODE` (optional, dev convenience) — when set to `1`, all three API routes return fixture data from `src/lib/demo/fixtures.ts` without calling GitHub, Flipp, or Anthropic. Lets the UI render without any creds. Each demo response also sets an `X-Demo-Mode: 1` header. Leave unset for normal operation.
 
 Each future feature issue adds the env vars it consumes in the same PR that introduces the consumer.

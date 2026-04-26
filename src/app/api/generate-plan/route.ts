@@ -6,6 +6,7 @@ import {
   MissingEnvVarError,
 } from "@/lib/plan/errors";
 import { generatePlan, validateInput } from "@/lib/plan/generate";
+import { isDemoMode, rotatedDemoPlan } from "@/lib/demo/fixtures";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -30,6 +31,12 @@ export async function POST(request: Request): Promise<Response> {
     }
     console.error("Unexpected /api/generate-plan validation error", err);
     return Response.json({ error: "Unexpected error" }, { status: 500 });
+  }
+
+  if (isDemoMode()) {
+    return Response.json(rotatedDemoPlan(), {
+      headers: { "X-Demo-Mode": "1" },
+    });
   }
 
   try {

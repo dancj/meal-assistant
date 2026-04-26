@@ -49,3 +49,6 @@ cypress/downloads
 
 # local sqlite database
 /data
+
+# compound-engineering review tooling output
+/.context/

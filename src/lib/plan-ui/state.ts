@@ -1,4 +1,5 @@
 import type { Deal } from "@/lib/deals/types";
+import type { MealLog } from "@/lib/log/types";
 import type { Recipe } from "@/lib/recipes/types";
 import type { MealPlan } from "@/lib/plan/types";
 import { REQUIRED_MEAL_COUNT } from "@/lib/plan/types";
@@ -10,12 +11,19 @@ export type PlanState =
       status: "ready";
       recipes: Recipe[];
       deals: Deal[];
+      recentLogs: MealLog[];
       plan: MealPlan;
       generating: boolean;
     };
 
 export type PlanAction =
-  | { type: "INIT_OK"; recipes: Recipe[]; deals: Deal[]; plan: MealPlan }
+  | {
+      type: "INIT_OK";
+      recipes: Recipe[];
+      deals: Deal[];
+      recentLogs: MealLog[];
+      plan: MealPlan;
+    }
   | { type: "INIT_FAILED"; error: string }
   | { type: "REGEN_STARTED" }
   | { type: "REGEN_OK"; plan: MealPlan }
@@ -35,6 +43,7 @@ export function planReducer(state: PlanState, action: PlanAction): PlanState {
           status: "ready",
           recipes: action.recipes,
           deals: action.deals,
+          recentLogs: action.recentLogs,
           plan: action.plan,
           generating: false,
         };
@@ -53,6 +62,7 @@ export function planReducer(state: PlanState, action: PlanAction): PlanState {
           status: "ready",
           recipes: action.recipes,
           deals: action.deals,
+          recentLogs: action.recentLogs,
           plan: action.plan,
           generating: false,
         };

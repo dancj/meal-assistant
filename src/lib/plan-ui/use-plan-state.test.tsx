@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const fetchRecipesMock = vi.fn();
 const fetchDealsMock = vi.fn();
+const fetchRecentLogsMock = vi.fn();
 const generatePlanMock = vi.fn();
 
 vi.mock("@/lib/api/client", async () => {
@@ -14,12 +15,13 @@ vi.mock("@/lib/api/client", async () => {
     ...actual,
     fetchRecipes: () => fetchRecipesMock(),
     fetchDeals: () => fetchDealsMock(),
+    fetchRecentLogs: (weeks?: number) => fetchRecentLogsMock(weeks),
     generatePlan: (input: unknown) => generatePlanMock(input),
   };
 });
 
 vi.mock("sonner", () => ({
-  toast: { error: vi.fn(), success: vi.fn() },
+  toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() },
 }));
 
 import { usePlanState } from "./use-plan-state";
@@ -41,6 +43,8 @@ const fivePlan = plan(["A", "B", "C", "D", "E"]);
 beforeEach(() => {
   fetchRecipesMock.mockReset();
   fetchDealsMock.mockReset();
+  fetchRecentLogsMock.mockReset();
+  fetchRecentLogsMock.mockResolvedValue([]);
   generatePlanMock.mockReset();
 });
 
@@ -63,7 +67,47 @@ describe("usePlanState — initial load", () => {
 
     expect(fetchRecipesMock).toHaveBeenCalledTimes(1);
     expect(fetchDealsMock).toHaveBeenCalledTimes(1);
+    expect(fetchRecentLogsMock).toHaveBeenCalledTimes(1);
     expect(generatePlanMock).toHaveBeenCalledTimes(1);
+    expect(generatePlanMock).toHaveBeenCalledWith({
+      recipes: [],
+      deals: [],
+      logs: [],
+      pantry: [],
+    });
+  });
+
+  it("passes fetched logs through to generatePlan", async () => {
+    fetchRecipesMock.mockResolvedValue([]);
+    fetchDealsMock.mockResolvedValue([]);
+    const logs = [
+      { week: "2026-04-13", cooked: ["Tacos"], skipped: [] },
+    ];
+    fetchRecentLogsMock.mockResolvedValue(logs);
+    generatePlanMock.mockResolvedValue(fivePlan);
+
+    const { result } = renderHook(() => usePlanState());
+    await waitFor(() => {
+      expect(result.current.state.status).toBe("ready");
+    });
+    expect(generatePlanMock).toHaveBeenCalledWith({
+      recipes: [],
+      deals: [],
+      logs,
+      pantry: [],
+    });
+  });
+
+  it("degrades to logs=[] and warns when fetchRecentLogs rejects", async () => {
+    fetchRecipesMock.mockResolvedValue([]);
+    fetchDealsMock.mockResolvedValue([]);
+    fetchRecentLogsMock.mockRejectedValue(new Error("logs unavailable"));
+    generatePlanMock.mockResolvedValue(fivePlan);
+
+    const { result } = renderHook(() => usePlanState());
+    await waitFor(() => {
+      expect(result.current.state.status).toBe("ready");
+    });
     expect(generatePlanMock).toHaveBeenCalledWith({
       recipes: [],
       deals: [],

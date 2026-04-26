@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   DEMO_DEALS,
+  DEMO_LOGS,
   DEMO_PLAN,
   DEMO_RECIPES,
   isDemoMode,
@@ -78,5 +79,23 @@ describe("DEMO_RECIPES / DEMO_DEALS sanity", () => {
     const stores = new Set(DEMO_DEALS.map((d) => d.store));
     expect(stores.has("safeway")).toBe(true);
     expect(stores.has("aldi")).toBe(true);
+  });
+});
+
+describe("DEMO_LOGS sanity", () => {
+  it("has at least 3 weeks of recent activity", () => {
+    expect(DEMO_LOGS.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("every entry has a valid YYYY-MM-DD week and string arrays", () => {
+    for (const log of DEMO_LOGS) {
+      expect(log.week).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(log.cooked.every((c) => typeof c === "string")).toBe(true);
+      expect(log.skipped.every((s) => typeof s === "string")).toBe(true);
+    }
+  });
+
+  it("includes at least one entry with a skipReason", () => {
+    expect(DEMO_LOGS.some((l) => l.skipReason !== undefined)).toBe(true);
   });
 });

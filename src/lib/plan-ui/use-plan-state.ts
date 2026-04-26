@@ -4,11 +4,13 @@ import { useCallback, useEffect, useReducer, useRef } from "react";
 import { toast } from "sonner";
 import {
   fetchDeals,
+  fetchRecentLogs,
   fetchRecipes,
   generatePlan,
   ApiError,
 } from "@/lib/api/client";
 import type { Deal } from "@/lib/deals/types";
+import type { MealLog } from "@/lib/log/types";
 import type { Recipe } from "@/lib/recipes/types";
 import type { GeneratePlanInput } from "@/lib/plan/types";
 import { initialState, planReducer, type PlanState } from "./state";
@@ -36,8 +38,21 @@ export function usePlanState(): UsePlanStateResult {
   const runInit = useCallback(async () => {
     let recipes: Recipe[];
     let deals: Deal[];
+    let recentLogs: MealLog[];
     try {
-      [recipes, deals] = await Promise.all([fetchRecipes(), fetchDeals()]);
+      [recipes, deals, recentLogs] = await Promise.all([
+        fetchRecipes(),
+        fetchDeals(),
+        // Logs are nice-to-have for plan quality but the page should still
+        // render if /api/log fails (e.g., no /log/ directory yet); degrade to []
+        // and surface a non-blocking toast.
+        fetchRecentLogs(8).catch((err: unknown) => {
+          toast.warning("Couldn't load recent logs", {
+            description: errorMessage(err),
+          });
+          return [] as MealLog[];
+        }),
+      ]);
     } catch (err) {
       dispatch({ type: "INIT_FAILED", error: errorMessage(err) });
       return;
@@ -45,12 +60,12 @@ export function usePlanState(): UsePlanStateResult {
     const input: GeneratePlanInput = {
       recipes,
       deals,
-      logs: [],
+      logs: recentLogs,
       pantry: [],
     };
     try {
       const plan = await generatePlan(input);
-      dispatch({ type: "INIT_OK", recipes, deals, plan });
+      dispatch({ type: "INIT_OK", recipes, deals, recentLogs, plan });
     } catch (err) {
       dispatch({ type: "INIT_FAILED", error: errorMessage(err) });
     }
@@ -65,9 +80,9 @@ export function usePlanState(): UsePlanStateResult {
   const regenerate = useCallback(() => {
     const current = stateRef.current;
     if (current.status !== "ready" || current.generating) return;
-    const { recipes, deals } = current;
+    const { recipes, deals, recentLogs } = current;
     dispatch({ type: "REGEN_STARTED" });
-    void generatePlan({ recipes, deals, logs: [], pantry: [] })
+    void generatePlan({ recipes, deals, logs: recentLogs, pantry: [] })
       .then((plan) => {
         dispatch({ type: "REGEN_OK", plan });
       })
@@ -81,9 +96,9 @@ export function usePlanState(): UsePlanStateResult {
   const swap = useCallback((index: number) => {
     const current = stateRef.current;
     if (current.status !== "ready" || current.generating) return;
-    const { recipes, deals } = current;
+    const { recipes, deals, recentLogs } = current;
     dispatch({ type: "SWAP_STARTED" });
-    void generatePlan({ recipes, deals, logs: [], pantry: [] })
+    void generatePlan({ recipes, deals, logs: recentLogs, pantry: [] })
       .then((plan) => {
         dispatch({ type: "SWAP_OK", index, plan });
       })

@@ -21,6 +21,7 @@ const ready: PlanState = {
   status: "ready",
   recipes: [],
   deals: [],
+  recentLogs: [],
   plan: fivePlan,
   generating: false,
 };
@@ -31,12 +32,14 @@ describe("planReducer / loading", () => {
       type: "INIT_OK",
       recipes: [],
       deals: [],
+      recentLogs: [],
       plan: fivePlan,
     });
     expect(next).toEqual({
       status: "ready",
       recipes: [],
       deals: [],
+      recentLogs: [],
       plan: fivePlan,
       generating: false,
     });
@@ -69,6 +72,7 @@ describe("planReducer / error", () => {
       type: "INIT_OK",
       recipes: [],
       deals: [],
+      recentLogs: [],
       plan: fivePlan,
     });
     expect(next.status).toBe("ready");

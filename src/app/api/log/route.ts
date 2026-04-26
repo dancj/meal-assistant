@@ -39,16 +39,18 @@ function validateBody(body: unknown): MealLog {
   if (!isStringArray(body.cooked)) {
     throw new InvalidLogRequestError("cooked", "expected array of strings");
   }
-  if (body.cooked.some((c) => c === "")) {
+  const cooked: string[] = body.cooked;
+  if (cooked.some((c) => c === "")) {
     throw new InvalidLogRequestError("cooked", "entries must be non-empty strings");
   }
   if (!isStringArray(body.skipped)) {
     throw new InvalidLogRequestError("skipped", "expected array of strings");
   }
-  if (body.skipped.some((s) => s === "")) {
+  const skipped: string[] = body.skipped;
+  if (skipped.some((s) => s === "")) {
     throw new InvalidLogRequestError("skipped", "entries must be non-empty strings");
   }
-  const intersection = body.cooked.filter((c) => body.skipped.includes(c));
+  const intersection = cooked.filter((c) => skipped.includes(c));
   if (intersection.length > 0) {
     throw new InvalidLogRequestError(
       "cooked",
@@ -68,8 +70,8 @@ function validateBody(body: unknown): MealLog {
 
   const log: MealLog = {
     week,
-    cooked: body.cooked,
-    skipped: body.skipped,
+    cooked,
+    skipped,
   };
   if (skipReason !== undefined) log.skipReason = skipReason;
   return log;

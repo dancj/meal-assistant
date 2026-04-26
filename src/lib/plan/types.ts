@@ -1,4 +1,5 @@
 import type { Deal } from "@/lib/deals/types";
+import type { MealLog } from "@/lib/log/types";
 import type { Recipe } from "@/lib/recipes/types";
 
 export type Store = "aldi" | "safeway" | "costco" | "wegmans";
@@ -35,11 +36,7 @@ export interface MealPlan {
   groceryList: GroceryItem[];
 }
 
-// #68 will own the real shape; this placeholder keeps the contract forward-compatible.
-export interface MealLog {
-  date: string;
-  title: string;
-}
+export type { MealLog };
 
 export interface GeneratePlanInput {
   recipes: Recipe[];

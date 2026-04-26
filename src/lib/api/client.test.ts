@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiError, fetchDeals, fetchRecipes, generatePlan } from "./client";
 import type { GeneratePlanInput, MealPlan } from "@/lib/plan/types";
 

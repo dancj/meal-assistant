@@ -19,10 +19,11 @@ export class InvalidRequestError extends Error {
 }
 
 export class AnthropicUpstreamError extends Error {
-  readonly status: number;
+  readonly status: number | undefined;
 
-  constructor(status: number, detail?: string) {
-    const base = `Anthropic upstream error (status ${status})`;
+  constructor(status: number | undefined, detail?: string) {
+    const statusPart = status === undefined ? "unknown" : String(status);
+    const base = `Anthropic upstream error (status ${statusPart})`;
     super(detail ? `${base}: ${detail}` : base);
     this.name = "AnthropicUpstreamError";
     this.status = status;

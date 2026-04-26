@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import type { Message } from "@anthropic-ai/sdk/resources/messages";
 import {
   getAnthropicClient,
   MAX_TOKENS,
@@ -13,12 +14,8 @@ import {
   MalformedPlanError,
 } from "./errors";
 import { buildPrompt } from "./prompt";
-import type { GeneratePlanInput, MealLog, MealPlan } from "./types";
-import { validateMealPlan } from "./validate";
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
-}
+import type { GeneratePlanInput, MealLog } from "./types";
+import { isPlainObject, validateMealPlan } from "./validate";
 
 export function validateInput(body: unknown): GeneratePlanInput {
   if (!isPlainObject(body)) {
@@ -50,25 +47,25 @@ export function validateInput(body: unknown): GeneratePlanInput {
     );
   }
 
-  // Trust recipes / deals / logs shape — they came from our own endpoints.
-  // Cast through unknown so the typed input matches our contract.
+  // Recipes/deals/logs are array-shape only; element shape is trusted from
+  // /api/recipes and /api/deals. Cast through unknown to match our contract.
   return {
     recipes: body.recipes as GeneratePlanInput["recipes"],
     deals: body.deals as GeneratePlanInput["deals"],
     logs: body.logs as MealLog[],
     pantry: body.pantry,
-    preferences: body.preferences,
+    ...(body.preferences !== undefined ? { preferences: body.preferences } : {}),
   };
 }
 
-export async function generatePlan(input: GeneratePlanInput): Promise<MealPlan> {
+export async function generatePlan(input: GeneratePlanInput) {
   const client = getAnthropicClient();
   const { system, messages } = buildPrompt(input);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-  let response;
+  let response: Message;
   try {
     response = await client.messages.create(
       {
@@ -78,11 +75,11 @@ export async function generatePlan(input: GeneratePlanInput): Promise<MealPlan> 
         system,
         messages,
       },
-      { signal: controller.signal },
+      { signal: controller.signal, timeout: TIMEOUT_MS },
     );
   } catch (err) {
     if (err instanceof Anthropic.APIError) {
-      throw new AnthropicUpstreamError(err.status ?? 0, err.message);
+      throw new AnthropicUpstreamError(err.status, err.message);
     }
     throw new AnthropicNetworkError(err);
   } finally {
@@ -90,7 +87,7 @@ export async function generatePlan(input: GeneratePlanInput): Promise<MealPlan> 
   }
 
   const textBlock = response.content.find((block) => block.type === "text");
-  if (textBlock === undefined || textBlock.type !== "text") {
+  if (textBlock === undefined) {
     throw new MalformedPlanError("<root>", "no text block in response");
   }
 

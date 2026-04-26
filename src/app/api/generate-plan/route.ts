@@ -41,11 +41,14 @@ export async function POST(request: Request): Promise<Response> {
     }
     if (err instanceof AnthropicUpstreamError) {
       return Response.json(
-        { error: "Anthropic upstream error", upstreamStatus: err.status },
+        err.status === undefined
+          ? { error: "Anthropic upstream error" }
+          : { error: "Anthropic upstream error", upstreamStatus: err.status },
         { status: 502 },
       );
     }
     if (err instanceof AnthropicNetworkError) {
+      console.error("Anthropic network error", err);
       return Response.json(
         { error: "Anthropic network error" },
         { status: 502 },

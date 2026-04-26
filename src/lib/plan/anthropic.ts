@@ -16,7 +16,10 @@ export function getAnthropicClient(): Anthropic {
     throw new MissingEnvVarError("ANTHROPIC_API_KEY");
   }
 
-  _client = new Anthropic({ apiKey });
+  // maxRetries: 0 — keep the 60s AbortController/timeout in charge of the
+  // wall-clock budget. SDK default of 2 retries with exponential backoff can
+  // outrun the route's maxDuration on transient 5xx/overloaded responses.
+  _client = new Anthropic({ apiKey, maxRetries: 0 });
   return _client;
 }
 

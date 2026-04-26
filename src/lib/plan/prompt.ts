@@ -1,7 +1,7 @@
 import type { MessageCreateParamsNonStreaming } from "@anthropic-ai/sdk/resources/messages";
 import type { Deal } from "@/lib/deals/types";
 import type { Recipe } from "@/lib/recipes/types";
-import type { GeneratePlanInput, MealLog } from "./types";
+import type { GeneratePlanInput } from "./types";
 import { REQUIRED_MEAL_COUNT } from "./types";
 
 const STORE_PRIORITY_BLOCK = `Available stores:
@@ -68,8 +68,10 @@ export function compactRecipes(recipes: Recipe[]): CompactRecipe[] {
   }));
 }
 
-export function groupDealsByStore(deals: Deal[]): Record<string, Deal[]> {
-  const grouped: Record<string, Deal[]> = {};
+export function groupDealsByStore(
+  deals: Deal[],
+): Partial<Record<Deal["store"], Deal[]>> {
+  const grouped: Partial<Record<Deal["store"], Deal[]>> = {};
   for (const deal of deals) {
     const bucket = grouped[deal.store] ?? [];
     bucket.push(deal);
@@ -92,7 +94,7 @@ export function buildUserMessage(
 
   const otherSections: string[] = [
     "THIS WEEK'S DEALS:\n" + JSON.stringify(groupDealsByStore(input.deals)),
-    "RECENT MEAL LOGS (avoid repeats):\n" + JSON.stringify(input.logs satisfies MealLog[]),
+    "RECENT MEAL LOGS (avoid repeats):\n" + JSON.stringify(input.logs),
     "PANTRY (omit from grocery list):\n" + JSON.stringify(input.pantry),
   ];
 

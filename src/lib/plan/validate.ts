@@ -14,7 +14,7 @@ import {
 // omission, deal-flag accuracy) is the model's responsibility; this validator
 // only enforces that the response matches the MealPlan TypeScript interface.
 
-const FENCE_RX = /^```(?:json)?\s*\n([\s\S]*?)\n```\s*$/;
+const FENCE_RX = /^```(?:json)?\s*([\s\S]*?)\s*```\s*$/;
 
 function stripFences(raw: string): string {
   const trimmed = raw.trim();
@@ -22,10 +22,14 @@ function stripFences(raw: string): string {
   return match !== null ? match[1].trim() : trimmed;
 }
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
+export function isPlainObject(value: unknown): value is Record<string, unknown> {
   return (
     value !== null && typeof value === "object" && !Array.isArray(value)
   );
+}
+
+function isStore(value: string): value is Store {
+  return (STORES as readonly string[]).includes(value);
 }
 
 function expectString(value: unknown, path: string): string {
@@ -60,13 +64,13 @@ function expectArray(value: unknown, path: string): unknown[] {
 
 function expectStore(value: unknown, path: string): Store {
   const s = expectString(value, path);
-  if (!(STORES as readonly string[]).includes(s)) {
+  if (!isStore(s)) {
     throw new MalformedPlanError(
       path,
       `expected one of ${STORES.join("|")}, got "${s}"`,
     );
   }
-  return s as Store;
+  return s;
 }
 
 function validateDealMatchOnMeal(value: unknown, path: string): DealMatchOnMeal {

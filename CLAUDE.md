@@ -30,7 +30,7 @@ Do not reintroduce Supabase, SQLite, `better-sqlite3`, `@google/genai`, or the w
 ### Source Layout
 
 All source code lives under `src/`:
-- `src/app/` — pages, layouts, and API routes (`src/app/api/[route]/route.ts`). Implemented routes: `GET /api/recipes` (#64), `GET /api/deals` (#65).
+- `src/app/` — pages, layouts, and API routes (`src/app/api/[route]/route.ts`). Implemented routes: `GET /api/recipes` (#64), `GET /api/deals` (#65), `POST /api/generate-plan` (#66).
 - `src/components/` — UI components (shadcn primitives under `src/components/ui/`)
 - `src/lib/` — shared utilities. Currently: `recipes/` (GitHub-backed recipe reader — `types.ts`, `parse.ts`, `github.ts`), `deals/` (Flipp-backed Safeway + Aldi deals — `types.ts`, `parse.ts`, `flipp.ts`, `env.ts`, `errors.ts`), `plan/` (Claude-powered meal-plan generator — `types.ts`, `errors.ts`, `anthropic.ts`, `prompt.ts`, `validate.ts`, `generate.ts`), `resend.ts` (lazy Resend client factory, retained for #70), `email.ts` (`parseRecipients` helper), `utils.ts` (`cn` className merger)
 - `src/test/` — Vitest setup

@@ -30,6 +30,7 @@ export interface GroceryItem {
 }
 
 export interface MealPlan {
+  /** Always exactly REQUIRED_MEAL_COUNT (5) entries — enforced by validateMealPlan. */
   meals: MealPlanMeal[];
   groceryList: GroceryItem[];
 }

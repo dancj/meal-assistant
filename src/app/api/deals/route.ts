@@ -2,6 +2,7 @@ import { readEnvZip } from "@/lib/deals/env";
 import { InvalidZipError } from "@/lib/deals/errors";
 import { fetchAllDeals, type StoreOutcome } from "@/lib/deals/flipp";
 import { DEFAULT_ZIP } from "@/lib/deals/types";
+import { DEMO_DEALS, isDemoMode } from "@/lib/demo/fixtures";
 
 export const runtime = "nodejs";
 
@@ -43,6 +44,15 @@ function buildHeaders(perStore: StoreOutcome[]): Headers {
 }
 
 export async function GET(): Promise<Response> {
+  if (isDemoMode()) {
+    return Response.json(DEMO_DEALS, {
+      headers: {
+        "X-Demo-Mode": "1",
+        "X-Deals-Source": "demo",
+      },
+    });
+  }
+
   let safewayZip: string;
   let aldiZip: string;
   try {

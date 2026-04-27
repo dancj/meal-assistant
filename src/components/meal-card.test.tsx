@@ -33,26 +33,16 @@ function renderCard(props: Partial<React.ComponentProps<typeof MealCard>> = {}) 
 }
 
 describe("MealCard", () => {
-  it("renders title, kid version, and a deal badge per dealMatches entry", () => {
+  it("renders title and kid version", () => {
     renderCard({
       meal: meal({
         title: "Tacos",
         kidVersion: "plain chicken, no seasoning",
-        dealMatches: [
-          { item: "chicken thighs", salePrice: "$1.99/lb", store: "safeway" },
-          { item: "tortillas", salePrice: "$2.49", store: "aldi" },
-        ],
       }),
     });
 
     expect(screen.getByText("Tacos")).toBeInTheDocument();
     expect(screen.getByText(/plain chicken, no seasoning/)).toBeInTheDocument();
-    expect(
-      screen.getByText(/chicken thighs.*\$1\.99\/lb.*safeway/),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/tortillas.*\$2\.49.*aldi/),
-    ).toBeInTheDocument();
   });
 
   it("does not render kid callout when kidVersion is null", () => {
@@ -60,9 +50,31 @@ describe("MealCard", () => {
     expect(screen.queryByTestId("kid-callout")).toBeNull();
   });
 
-  it("does not render deal badges row when dealMatches is empty", () => {
-    renderCard({ meal: meal({ dealMatches: [] }) });
+  it("never renders per-card deal badges (info lives on the grocery list now)", () => {
+    renderCard({
+      meal: meal({
+        dealMatches: [
+          { item: "chicken thighs", salePrice: "$1.99/lb", store: "safeway" },
+        ],
+      }),
+    });
     expect(screen.queryByTestId("deal-badges")).toBeNull();
+    expect(screen.queryByText(/safeway/i)).toBeNull();
+  });
+
+  it("renders the day label when provided", () => {
+    renderCard({ dayLabel: "Wed" });
+    expect(screen.getByTestId("day-label")).toHaveTextContent("Wed");
+  });
+
+  it("marks the card as tonight when isTonight is true", () => {
+    renderCard({ dayLabel: "Mon", isTonight: true });
+    expect(screen.getByTestId("tonight-marker")).toBeInTheDocument();
+  });
+
+  it("does not render a tonight marker when isTonight is false or absent", () => {
+    renderCard({ dayLabel: "Tue", isTonight: false });
+    expect(screen.queryByTestId("tonight-marker")).toBeNull();
   });
 
   it("calls onSwap with the right index on swap click", () => {

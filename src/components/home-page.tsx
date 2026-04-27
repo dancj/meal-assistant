@@ -16,6 +16,14 @@ export interface HomePageProps {
   emailEnabled: boolean;
 }
 
+const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri"] as const;
+
+function todaySlot(now: Date = new Date()): number | null {
+  const dow = now.getDay(); // 0 Sun .. 6 Sat
+  if (dow >= 1 && dow <= 5) return dow - 1;
+  return null;
+}
+
 function LoadingState() {
   return (
     <div className="grid gap-6 md:grid-cols-12">
@@ -71,6 +79,7 @@ export function HomePage({ emailEnabled }: HomePageProps) {
 
   const { deals, plan, generating, thumbs, skipReason } = state;
   const anyDownThumbs = thumbs.some((t) => t === "down");
+  const tonightIndex = todaySlot();
 
   return (
     <div className="grid gap-6 md:grid-cols-12">
@@ -82,9 +91,9 @@ export function HomePage({ emailEnabled }: HomePageProps) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold">This week&apos;s meals</h1>
           <div className="flex items-center gap-2">
-            {emailEnabled && <EmailButton plan={plan} disabled={generating} />}
             <Button
-              variant="outline"
+              variant="ghost"
+              size="sm"
               onClick={regenerate}
               disabled={generating}
               aria-label="Regenerate plan"
@@ -92,6 +101,7 @@ export function HomePage({ emailEnabled }: HomePageProps) {
               <RefreshCw className={generating ? "animate-spin" : undefined} />
               {generating ? "Generating…" : "Regenerate plan"}
             </Button>
+            {emailEnabled && <EmailButton plan={plan} disabled={generating} />}
           </div>
         </div>
 
@@ -103,6 +113,8 @@ export function HomePage({ emailEnabled }: HomePageProps) {
               index={index}
               isSwapping={generating}
               thumb={thumbs[index] ?? null}
+              dayLabel={DAY_LABELS[index]}
+              isTonight={index === tonightIndex}
               onSwap={swap}
               onThumbsUp={(i) => setThumb(i, "up")}
               onThumbsDown={(i) => setThumb(i, "down")}

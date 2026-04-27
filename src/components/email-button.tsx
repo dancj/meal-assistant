@@ -40,7 +40,6 @@ export function EmailButton({ plan, disabled }: EmailButtonProps) {
 
   return (
     <Button
-      variant="outline"
       onClick={handleClick}
       disabled={disabled || sending}
       aria-label="Email me this"

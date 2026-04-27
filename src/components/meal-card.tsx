@@ -3,7 +3,6 @@
 import { RefreshCw, ThumbsDown, ThumbsUp } from "lucide-react";
 import type { MealPlanMeal } from "@/lib/plan/types";
 import type { Thumb } from "@/lib/plan-ui/state";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -13,6 +12,8 @@ export interface MealCardProps {
   index: number;
   isSwapping: boolean;
   thumb: Thumb;
+  dayLabel?: string;
+  isTonight?: boolean;
   onSwap: (index: number) => void;
   onThumbsUp: (index: number) => void;
   onThumbsDown: (index: number) => void;
@@ -23,14 +24,37 @@ export function MealCard({
   index,
   isSwapping,
   thumb,
+  dayLabel,
+  isTonight = false,
   onSwap,
   onThumbsUp,
   onThumbsDown,
 }: MealCardProps) {
   return (
-    <Card aria-label={`Meal ${index + 1}: ${meal.title}`}>
-      <CardHeader>
-        <CardTitle className="text-lg">{meal.title}</CardTitle>
+    <Card
+      aria-label={`Meal ${index + 1}: ${meal.title}`}
+      className={cn(
+        isTonight &&
+          "ring-2 ring-primary/60 shadow-md sm:col-span-2 xl:col-span-2",
+      )}
+    >
+      <CardHeader className="gap-1">
+        {(dayLabel || isTonight) && (
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {isTonight && (
+              <span
+                data-testid="tonight-marker"
+                className="rounded-full bg-primary px-2 py-0.5 text-[0.6875rem] font-semibold text-primary-foreground"
+              >
+                Tonight
+              </span>
+            )}
+            {dayLabel && <span data-testid="day-label">{dayLabel}</span>}
+          </div>
+        )}
+        <CardTitle className={cn(isTonight ? "text-xl" : "text-lg")}>
+          {meal.title}
+        </CardTitle>
       </CardHeader>
 
       <CardContent className="flex flex-col gap-3">
@@ -41,20 +65,6 @@ export function MealCard({
           >
             <span aria-hidden="true">🧒 </span>
             <span>{meal.kidVersion}</span>
-          </div>
-        )}
-
-        {meal.dealMatches.length > 0 && (
-          <div
-            className="flex flex-wrap gap-1.5"
-            data-testid="deal-badges"
-          >
-            {meal.dealMatches.map((dm, i) => (
-              <Badge key={`${dm.item}-${i}`} variant="secondary">
-                <span aria-hidden="true">🏷 </span>
-                {dm.item} {dm.salePrice} @ {dm.store}
-              </Badge>
-            ))}
           </div>
         )}
 

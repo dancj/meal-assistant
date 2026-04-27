@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MalformedPlanError } from "./errors";
 import type { MealPlan } from "./types";
-import { validateMealPlan } from "./validate";
+import { assertMealPlan, validateMealPlan } from "./validate";
 
 function makeMeal(overrides: Partial<MealPlan["meals"][number]> = {}) {
   return {
@@ -339,6 +339,98 @@ describe("validateMealPlan — error paths", () => {
     const plan = { meals: makePlan().meals };
     try {
       validateMealPlan(JSON.stringify(plan));
+      throw new Error("expected throw");
+    } catch (err) {
+      expect((err as MalformedPlanError).path).toBe("groceryList");
+    }
+  });
+});
+
+describe("assertMealPlan — happy paths", () => {
+  it("returns the typed MealPlan unchanged for a valid object", () => {
+    const plan = makePlan();
+    const result = assertMealPlan(plan);
+    expect(result.meals).toHaveLength(5);
+    expect(result.groceryList).toEqual([]);
+  });
+
+  it("accepts the same valid input that validateMealPlan accepts", () => {
+    const plan = makePlan({
+      groceryList: [
+        { item: "Tofu", quantity: "14 oz", store: "aldi", dealMatch: null },
+      ],
+    });
+    const fromText = validateMealPlan(JSON.stringify(plan));
+    const fromObject = assertMealPlan(plan);
+    expect(fromObject).toEqual(fromText);
+  });
+});
+
+describe("assertMealPlan — error paths", () => {
+  it("throws when value is null", () => {
+    try {
+      assertMealPlan(null);
+      throw new Error("expected throw");
+    } catch (err) {
+      expect(err).toBeInstanceOf(MalformedPlanError);
+      expect((err as MalformedPlanError).path).toBe("<root>");
+    }
+  });
+
+  it("throws when value is an array", () => {
+    try {
+      assertMealPlan([]);
+      throw new Error("expected throw");
+    } catch (err) {
+      expect(err).toBeInstanceOf(MalformedPlanError);
+      expect((err as MalformedPlanError).path).toBe("<root>");
+    }
+  });
+
+  it("throws when meals length is 0", () => {
+    try {
+      assertMealPlan({ meals: [], groceryList: [] });
+      throw new Error("expected throw");
+    } catch (err) {
+      expect((err as MalformedPlanError).path).toBe("meals");
+      expect((err as MalformedPlanError).message).toMatch(/expected 5.*got 0/);
+    }
+  });
+
+  it("throws when meals length is 4", () => {
+    try {
+      assertMealPlan({
+        meals: [makeMeal(), makeMeal(), makeMeal(), makeMeal()],
+        groceryList: [],
+      });
+      throw new Error("expected throw");
+    } catch (err) {
+      expect((err as MalformedPlanError).path).toBe("meals");
+      expect((err as MalformedPlanError).message).toMatch(/expected 5.*got 4/);
+    }
+  });
+
+  it("throws when meals[0].title is a number", () => {
+    try {
+      assertMealPlan({
+        meals: [
+          { title: 123, kidVersion: null, dealMatches: [] },
+          makeMeal({ title: "M2" }),
+          makeMeal({ title: "M3" }),
+          makeMeal({ title: "M4" }),
+          makeMeal({ title: "M5" }),
+        ],
+        groceryList: [],
+      });
+      throw new Error("expected throw");
+    } catch (err) {
+      expect((err as MalformedPlanError).path).toBe("meals[0].title");
+    }
+  });
+
+  it("throws when groceryList is missing", () => {
+    try {
+      assertMealPlan({ meals: makePlan().meals });
       throw new Error("expected throw");
     } catch (err) {
       expect((err as MalformedPlanError).path).toBe("groceryList");

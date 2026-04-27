@@ -1,5 +1,6 @@
 import type { Deal } from "@/lib/deals/types";
 import type { MealLog } from "@/lib/log/types";
+import type { Pantry } from "@/lib/pantry/types";
 import type { MealPlan } from "@/lib/plan/types";
 import type { Recipe } from "@/lib/recipes/types";
 
@@ -324,3 +325,20 @@ export const DEMO_LOGS: MealLog[] = [
     skipReason: "kid was sick",
   },
 ];
+
+export const DEMO_PANTRY: Pantry = {
+  staples: [
+    "olive oil",
+    "salt",
+    "pepper",
+    "garlic",
+    "onions",
+    "rice",
+    "pasta",
+    "canned tomatoes",
+  ],
+  freezer: [
+    "chicken thighs (Costco, bought 2026-04-15)",
+    "ground beef (Costco, bought 2026-04-10)",
+  ],
+};

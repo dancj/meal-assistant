@@ -22,6 +22,7 @@ const ready: PlanState = {
   recipes: [],
   deals: [],
   recentLogs: [],
+  pantry: { staples: [], freezer: [] },
   plan: fivePlan,
   generating: false,
   currentWeek: "2026-04-20",
@@ -36,6 +37,7 @@ describe("planReducer / loading", () => {
       recipes: [],
       deals: [],
       recentLogs: [],
+      pantry: { staples: [], freezer: [] },
       plan: fivePlan,
       currentWeek: "2026-04-20",
     });
@@ -44,6 +46,7 @@ describe("planReducer / loading", () => {
       recipes: [],
       deals: [],
       recentLogs: [],
+      pantry: { staples: [], freezer: [] },
       plan: fivePlan,
       generating: false,
       currentWeek: "2026-04-20",
@@ -80,6 +83,7 @@ describe("planReducer / error", () => {
       recipes: [],
       deals: [],
       recentLogs: [],
+      pantry: { staples: [], freezer: [] },
       plan: fivePlan,
       currentWeek: "2026-04-20",
     });

@@ -1,5 +1,6 @@
 import type { Deal } from "@/lib/deals/types";
 import type { MealLog } from "@/lib/log/types";
+import type { Pantry } from "@/lib/pantry/types";
 import type { Recipe } from "@/lib/recipes/types";
 import type { MealPlan } from "@/lib/plan/types";
 import { REQUIRED_MEAL_COUNT } from "@/lib/plan/types";
@@ -14,6 +15,7 @@ export type PlanState =
       recipes: Recipe[];
       deals: Deal[];
       recentLogs: MealLog[];
+      pantry: Pantry;
       plan: MealPlan;
       generating: boolean;
       currentWeek: string;
@@ -27,6 +29,7 @@ export type PlanAction =
       recipes: Recipe[];
       deals: Deal[];
       recentLogs: MealLog[];
+      pantry: Pantry;
       plan: MealPlan;
       currentWeek: string;
     }
@@ -54,6 +57,7 @@ export function planReducer(state: PlanState, action: PlanAction): PlanState {
           recipes: action.recipes,
           deals: action.deals,
           recentLogs: action.recentLogs,
+          pantry: action.pantry,
           plan: action.plan,
           generating: false,
           currentWeek: action.currentWeek,
@@ -76,6 +80,7 @@ export function planReducer(state: PlanState, action: PlanAction): PlanState {
           recipes: action.recipes,
           deals: action.deals,
           recentLogs: action.recentLogs,
+          pantry: action.pantry,
           plan: action.plan,
           generating: false,
           currentWeek: action.currentWeek,

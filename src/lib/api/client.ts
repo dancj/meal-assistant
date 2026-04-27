@@ -1,5 +1,6 @@
 import type { Deal } from "@/lib/deals/types";
 import type { MealLog } from "@/lib/log/types";
+import type { Pantry } from "@/lib/pantry/types";
 import type { Recipe } from "@/lib/recipes/types";
 import type { GeneratePlanInput, MealPlan } from "@/lib/plan/types";
 
@@ -101,4 +102,8 @@ export function fetchRecentLogs(weeks = 8): Promise<MealLog[]> {
 
 export function postMealLog(entry: MealLog): Promise<{ ok: true }> {
   return postJson<{ ok: true }>("/api/log", entry);
+}
+
+export function fetchPantry(): Promise<Pantry> {
+  return getJson<Pantry>("/api/pantry");
 }

@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const fetchRecipesMock = vi.fn();
 const fetchDealsMock = vi.fn();
 const fetchRecentLogsMock = vi.fn();
+const fetchPantryMock = vi.fn();
 const postMealLogMock = vi.fn();
 const generatePlanMock = vi.fn();
 
@@ -17,6 +18,7 @@ vi.mock("@/lib/api/client", async () => {
     fetchRecipes: () => fetchRecipesMock(),
     fetchDeals: () => fetchDealsMock(),
     fetchRecentLogs: (weeks?: number) => fetchRecentLogsMock(weeks),
+    fetchPantry: () => fetchPantryMock(),
     postMealLog: (entry: unknown) => postMealLogMock(entry),
     generatePlan: (input: unknown) => generatePlanMock(input),
   };
@@ -65,6 +67,8 @@ beforeEach(() => {
   fetchDealsMock.mockReset();
   fetchRecentLogsMock.mockReset();
   fetchRecentLogsMock.mockResolvedValue([]);
+  fetchPantryMock.mockReset();
+  fetchPantryMock.mockResolvedValue({ staples: [], freezer: [] });
   postMealLogMock.mockReset();
   postMealLogMock.mockResolvedValue({ ok: true });
   generatePlanMock.mockReset();
@@ -144,7 +148,7 @@ describe("Home page", () => {
       recipes,
       deals,
       logs: [],
-      pantry: [],
+      pantry: { staples: [], freezer: [] },
     });
   });
 

@@ -39,7 +39,7 @@ function baseInput(): GeneratePlanInput {
     recipes: [],
     deals: [],
     logs: [],
-    pantry: [],
+    pantry: { staples: [], freezer: [] },
   };
 }
 
@@ -49,10 +49,13 @@ describe("validateInput", () => {
       recipes: [],
       deals: [],
       logs: [],
-      pantry: ["salt"],
+      pantry: { staples: ["salt"], freezer: ["chicken (Costco)"] },
       preferences: "no shellfish",
     });
-    expect(input.pantry).toEqual(["salt"]);
+    expect(input.pantry).toEqual({
+      staples: ["salt"],
+      freezer: ["chicken (Costco)"],
+    });
     expect(input.preferences).toBe("no shellfish");
   });
 
@@ -61,7 +64,7 @@ describe("validateInput", () => {
       recipes: [],
       deals: [],
       logs: [],
-      pantry: [],
+      pantry: { staples: [], freezer: [] },
     });
     expect(input.preferences).toBeUndefined();
   });
@@ -110,7 +113,7 @@ describe("validateInput", () => {
       recipes: [],
       deals: [],
       logs: [{ week: "2026-04-13", cooked: ["Tacos"], skipped: [] }],
-      pantry: [],
+      pantry: { staples: [], freezer: [] },
     });
     expect(got.logs).toHaveLength(1);
     expect(got.logs[0].week).toBe("2026-04-13");
@@ -122,7 +125,7 @@ describe("validateInput", () => {
         recipes: [],
         deals: [],
         logs: [{ week: "bad", cooked: [], skipped: [] }],
-        pantry: [],
+        pantry: { staples: [], freezer: [] },
       });
       throw new Error("expected throw");
     } catch (err) {
@@ -136,7 +139,7 @@ describe("validateInput", () => {
         recipes: [],
         deals: [],
         logs: [{ week: "2026-04-13", cooked: "no", skipped: [] }],
-        pantry: [],
+        pantry: { staples: [], freezer: [] },
       });
       throw new Error("expected throw");
     } catch (err) {
@@ -144,12 +147,40 @@ describe("validateInput", () => {
     }
   });
 
-  it("throws InvalidRequestError with field 'pantry' when pantry contains non-strings", () => {
+  it("throws InvalidRequestError with field 'pantry' when pantry is the old string-array shape", () => {
     try {
-      validateInput({ recipes: [], deals: [], logs: [], pantry: [1, 2] });
+      validateInput({ recipes: [], deals: [], logs: [], pantry: ["salt"] });
       throw new Error("expected throw");
     } catch (err) {
       expect((err as InvalidRequestError).field).toBe("pantry");
+    }
+  });
+
+  it("throws InvalidRequestError with field 'pantry.staples' when staples contains non-strings", () => {
+    try {
+      validateInput({
+        recipes: [],
+        deals: [],
+        logs: [],
+        pantry: { staples: [1, 2], freezer: [] },
+      });
+      throw new Error("expected throw");
+    } catch (err) {
+      expect((err as InvalidRequestError).field).toBe("pantry.staples");
+    }
+  });
+
+  it("throws InvalidRequestError with field 'pantry.freezer' when freezer is missing", () => {
+    try {
+      validateInput({
+        recipes: [],
+        deals: [],
+        logs: [],
+        pantry: { staples: [] },
+      });
+      throw new Error("expected throw");
+    } catch (err) {
+      expect((err as InvalidRequestError).field).toBe("pantry.freezer");
     }
   });
 
@@ -159,7 +190,7 @@ describe("validateInput", () => {
         recipes: [],
         deals: [],
         logs: [],
-        pantry: [],
+        pantry: { staples: [], freezer: [] },
         preferences: 123,
       });
       throw new Error("expected throw");

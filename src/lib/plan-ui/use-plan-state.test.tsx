@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const fetchRecipesMock = vi.fn();
 const fetchDealsMock = vi.fn();
 const fetchRecentLogsMock = vi.fn();
+const fetchPantryMock = vi.fn();
 const generatePlanMock = vi.fn();
 
 vi.mock("@/lib/api/client", async () => {
@@ -16,6 +17,7 @@ vi.mock("@/lib/api/client", async () => {
     fetchRecipes: () => fetchRecipesMock(),
     fetchDeals: () => fetchDealsMock(),
     fetchRecentLogs: (weeks?: number) => fetchRecentLogsMock(weeks),
+    fetchPantry: () => fetchPantryMock(),
     generatePlan: (input: unknown) => generatePlanMock(input),
   };
 });
@@ -45,6 +47,8 @@ beforeEach(() => {
   fetchDealsMock.mockReset();
   fetchRecentLogsMock.mockReset();
   fetchRecentLogsMock.mockResolvedValue([]);
+  fetchPantryMock.mockReset();
+  fetchPantryMock.mockResolvedValue({ staples: [], freezer: [] });
   generatePlanMock.mockReset();
 });
 
@@ -73,7 +77,7 @@ describe("usePlanState — initial load", () => {
       recipes: [],
       deals: [],
       logs: [],
-      pantry: [],
+      pantry: { staples: [], freezer: [] },
     });
   });
 
@@ -94,7 +98,7 @@ describe("usePlanState — initial load", () => {
       recipes: [],
       deals: [],
       logs,
-      pantry: [],
+      pantry: { staples: [], freezer: [] },
     });
   });
 
@@ -112,7 +116,7 @@ describe("usePlanState — initial load", () => {
       recipes: [],
       deals: [],
       logs: [],
-      pantry: [],
+      pantry: { staples: [], freezer: [] },
     });
   });
 
@@ -188,7 +192,7 @@ describe("usePlanState — swap", () => {
       recipes,
       deals,
       logs: [],
-      pantry: [],
+      pantry: { staples: [], freezer: [] },
     });
 
     if (result.current.state.status !== "ready") throw new Error("expected ready");

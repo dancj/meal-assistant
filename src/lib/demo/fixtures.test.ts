@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   DEMO_DEALS,
   DEMO_LOGS,
+  DEMO_PANTRY,
   DEMO_PLAN,
   DEMO_RECIPES,
   isDemoMode,
@@ -97,5 +98,23 @@ describe("DEMO_LOGS sanity", () => {
 
   it("includes at least one entry with a skipReason", () => {
     expect(DEMO_LOGS.some((l) => l.skipReason !== undefined)).toBe(true);
+  });
+});
+
+describe("DEMO_PANTRY sanity", () => {
+  it("has at least 5 staples and 1 freezer item", () => {
+    expect(DEMO_PANTRY.staples.length).toBeGreaterThanOrEqual(5);
+    expect(DEMO_PANTRY.freezer.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("every entry is a non-empty string", () => {
+    for (const s of DEMO_PANTRY.staples) {
+      expect(typeof s).toBe("string");
+      expect(s.length).toBeGreaterThan(0);
+    }
+    for (const f of DEMO_PANTRY.freezer) {
+      expect(typeof f).toBe("string");
+      expect(f.length).toBeGreaterThan(0);
+    }
   });
 });

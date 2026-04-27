@@ -1,5 +1,6 @@
 import type { Deal } from "@/lib/deals/types";
 import type { MealLog } from "@/lib/log/types";
+import type { Pantry } from "@/lib/pantry/types";
 import type { Recipe } from "@/lib/recipes/types";
 
 export type Store = "aldi" | "safeway" | "costco" | "wegmans";
@@ -36,13 +37,13 @@ export interface MealPlan {
   groceryList: GroceryItem[];
 }
 
-export type { MealLog };
+export type { MealLog, Pantry };
 
 export interface GeneratePlanInput {
   recipes: Recipe[];
   deals: Deal[];
   logs: MealLog[];
-  pantry: string[];
+  pantry: Pantry;
   preferences?: string;
 }
 

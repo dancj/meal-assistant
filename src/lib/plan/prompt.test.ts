@@ -40,7 +40,7 @@ function baseInput(overrides: Partial<GeneratePlanInput> = {}): GeneratePlanInpu
     recipes: [makeRecipe()],
     deals: [makeDeal()],
     logs: [],
-    pantry: [],
+    pantry: { staples: [], freezer: [] },
     ...overrides,
   };
 }
@@ -143,7 +143,7 @@ describe("buildUserMessage", () => {
   });
 
   it("includes empty arrays for empty logs and pantry rather than omitting sections", () => {
-    const messages = buildUserMessage(baseInput({ logs: [], pantry: [] }));
+    const messages = buildUserMessage(baseInput({ logs: [], pantry: { staples: [], freezer: [] } }));
     const otherText = (
       messages[0].content as Array<Record<string, unknown>>
     )[1].text as string;

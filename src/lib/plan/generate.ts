@@ -14,7 +14,7 @@ import {
   MalformedPlanError,
 } from "./errors";
 import { buildPrompt } from "./prompt";
-import type { GeneratePlanInput, MealLog } from "./types";
+import type { GeneratePlanInput, MealLog, Pantry } from "./types";
 import { isPlainObject, validateMealPlan } from "./validate";
 
 const WEEK_RX = /^\d{4}-\d{2}-\d{2}$/;
@@ -80,12 +80,7 @@ export function validateInput(body: unknown): GeneratePlanInput {
   const logs = body.logs.map((log, i) =>
     validateMealLog(log, `logs[${i}]`),
   );
-  if (!Array.isArray(body.pantry)) {
-    throw new InvalidRequestError("pantry", "expected array");
-  }
-  if (!body.pantry.every((p): p is string => typeof p === "string")) {
-    throw new InvalidRequestError("pantry", "expected array of strings");
-  }
+  const pantry = validatePantry(body.pantry);
   if (
     body.preferences !== undefined &&
     typeof body.preferences !== "string"
@@ -102,9 +97,37 @@ export function validateInput(body: unknown): GeneratePlanInput {
     recipes: body.recipes as GeneratePlanInput["recipes"],
     deals: body.deals as GeneratePlanInput["deals"],
     logs,
-    pantry: body.pantry,
+    pantry,
     ...(body.preferences !== undefined ? { preferences: body.preferences } : {}),
   };
+}
+
+function validatePantry(value: unknown): Pantry {
+  if (!isPlainObject(value)) {
+    throw new InvalidRequestError(
+      "pantry",
+      "expected object { staples: string[], freezer: string[] }",
+    );
+  }
+  if (
+    !Array.isArray(value.staples) ||
+    !value.staples.every((s): s is string => typeof s === "string")
+  ) {
+    throw new InvalidRequestError(
+      "pantry.staples",
+      "expected array of strings",
+    );
+  }
+  if (
+    !Array.isArray(value.freezer) ||
+    !value.freezer.every((f): f is string => typeof f === "string")
+  ) {
+    throw new InvalidRequestError(
+      "pantry.freezer",
+      "expected array of strings",
+    );
+  }
+  return { staples: value.staples, freezer: value.freezer };
 }
 
 export async function generatePlan(input: GeneratePlanInput) {

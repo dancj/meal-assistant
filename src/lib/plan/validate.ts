@@ -125,6 +125,28 @@ function validateGroceryItem(value: unknown, path: string): GroceryItem {
   };
 }
 
+export function assertMealPlan(value: unknown): MealPlan {
+  if (!isPlainObject(value)) {
+    throw new MalformedPlanError("<root>", "expected JSON object");
+  }
+
+  const mealsRaw = expectArray(value.meals, "meals");
+  if (mealsRaw.length !== REQUIRED_MEAL_COUNT) {
+    throw new MalformedPlanError(
+      "meals",
+      `expected ${REQUIRED_MEAL_COUNT} meals, got ${mealsRaw.length}`,
+    );
+  }
+  const meals = mealsRaw.map((m, i) => validateMeal(m, `meals[${i}]`));
+
+  const groceryListRaw = expectArray(value.groceryList, "groceryList");
+  const groceryList = groceryListRaw.map((g, i) =>
+    validateGroceryItem(g, `groceryList[${i}]`),
+  );
+
+  return { meals, groceryList };
+}
+
 export function validateMealPlan(rawText: string): MealPlan {
   const stripped = stripFences(rawText);
 
@@ -136,23 +158,5 @@ export function validateMealPlan(rawText: string): MealPlan {
     throw new MalformedPlanError("<root>", `not valid JSON: ${detail}`);
   }
 
-  if (!isPlainObject(parsed)) {
-    throw new MalformedPlanError("<root>", "expected JSON object");
-  }
-
-  const mealsRaw = expectArray(parsed.meals, "meals");
-  if (mealsRaw.length !== REQUIRED_MEAL_COUNT) {
-    throw new MalformedPlanError(
-      "meals",
-      `expected ${REQUIRED_MEAL_COUNT} meals, got ${mealsRaw.length}`,
-    );
-  }
-  const meals = mealsRaw.map((m, i) => validateMeal(m, `meals[${i}]`));
-
-  const groceryListRaw = expectArray(parsed.groceryList, "groceryList");
-  const groceryList = groceryListRaw.map((g, i) =>
-    validateGroceryItem(g, `groceryList[${i}]`),
-  );
-
-  return { meals, groceryList };
+  return assertMealPlan(parsed);
 }

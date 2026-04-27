@@ -2,12 +2,23 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const fetchRecipesMock = vi.fn();
-const fetchDealsMock = vi.fn();
-const fetchRecentLogsMock = vi.fn();
-const fetchPantryMock = vi.fn();
-const postMealLogMock = vi.fn();
-const generatePlanMock = vi.fn();
+const {
+  fetchRecipesMock,
+  fetchDealsMock,
+  fetchRecentLogsMock,
+  fetchPantryMock,
+  postMealLogMock,
+  generatePlanMock,
+  sendEmailMock,
+} = vi.hoisted(() => ({
+  fetchRecipesMock: vi.fn(),
+  fetchDealsMock: vi.fn(),
+  fetchRecentLogsMock: vi.fn(),
+  fetchPantryMock: vi.fn(),
+  postMealLogMock: vi.fn(),
+  generatePlanMock: vi.fn(),
+  sendEmailMock: vi.fn(),
+}));
 
 vi.mock("@/lib/api/client", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api/client")>(
@@ -21,6 +32,7 @@ vi.mock("@/lib/api/client", async () => {
     fetchPantry: () => fetchPantryMock(),
     postMealLog: (entry: unknown) => postMealLogMock(entry),
     generatePlan: (input: unknown) => generatePlanMock(input),
+    sendEmail: (plan: unknown) => sendEmailMock(plan),
   };
 });
 
@@ -28,9 +40,12 @@ vi.mock("sonner", () => ({
   toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() },
 }));
 
-import Home from "./page";
+import { HomePage } from "@/components/home-page";
 import type { Deal } from "@/lib/deals/types";
 import type { MealPlan } from "@/lib/plan/types";
+
+const Home = () => <HomePage emailEnabled={false} />;
+const HomeWithEmail = () => <HomePage emailEnabled={true} />;
 
 const recipes = [
   { title: "R1", tags: [], kidVersion: null, content: "x", filename: "r1.md" },
@@ -72,6 +87,7 @@ beforeEach(() => {
   postMealLogMock.mockReset();
   postMealLogMock.mockResolvedValue({ ok: true });
   generatePlanMock.mockReset();
+  sendEmailMock.mockReset();
 });
 
 afterEach(() => {
@@ -97,7 +113,7 @@ describe("Home page", () => {
     expect(screen.getByLabelText(/grocery list/i)).toBeInTheDocument();
   });
 
-  it("does not render an Email me this button (deferred to #70)", async () => {
+  it("does not render an Email me this button when emailEnabled=false", async () => {
     fetchRecipesMock.mockResolvedValue(recipes);
     fetchDealsMock.mockResolvedValue(deals);
     generatePlanMock.mockResolvedValue(fivePlan);
@@ -106,7 +122,29 @@ describe("Home page", () => {
     await waitFor(() => {
       expect(screen.getByText("Meal-A")).toBeInTheDocument();
     });
-    expect(screen.queryByText(/email me/i)).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /email me this/i }),
+    ).toBeNull();
+  });
+
+  it("renders the Email me this button when emailEnabled=true and clicking it POSTs the plan", async () => {
+    fetchRecipesMock.mockResolvedValue(recipes);
+    fetchDealsMock.mockResolvedValue(deals);
+    generatePlanMock.mockResolvedValue(fivePlan);
+    sendEmailMock.mockResolvedValue({ ok: true, id: "re_abc123" });
+
+    render(<HomeWithEmail />);
+    await waitFor(() => {
+      expect(screen.getByText("Meal-A")).toBeInTheDocument();
+    });
+
+    const button = screen.getByRole("button", { name: /email me this/i });
+    expect(button).toBeInTheDocument();
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(sendEmailMock).toHaveBeenCalledWith(fivePlan);
+    });
   });
 
   it("renders error state with retry button when initial fetch fails", async () => {

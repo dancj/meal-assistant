@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const fetchRecipesMock = vi.fn();
 const fetchDealsMock = vi.fn();
+const fetchRecentLogsMock = vi.fn();
+const postMealLogMock = vi.fn();
 const generatePlanMock = vi.fn();
 
 vi.mock("@/lib/api/client", async () => {
@@ -14,12 +16,14 @@ vi.mock("@/lib/api/client", async () => {
     ...actual,
     fetchRecipes: () => fetchRecipesMock(),
     fetchDeals: () => fetchDealsMock(),
+    fetchRecentLogs: (weeks?: number) => fetchRecentLogsMock(weeks),
+    postMealLog: (entry: unknown) => postMealLogMock(entry),
     generatePlan: (input: unknown) => generatePlanMock(input),
   };
 });
 
 vi.mock("sonner", () => ({
-  toast: { error: vi.fn(), success: vi.fn() },
+  toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() },
 }));
 
 import Home from "./page";
@@ -59,6 +63,10 @@ const fivePlan: MealPlan = {
 beforeEach(() => {
   fetchRecipesMock.mockReset();
   fetchDealsMock.mockReset();
+  fetchRecentLogsMock.mockReset();
+  fetchRecentLogsMock.mockResolvedValue([]);
+  postMealLogMock.mockReset();
+  postMealLogMock.mockResolvedValue({ ok: true });
   generatePlanMock.mockReset();
 });
 

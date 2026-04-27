@@ -35,7 +35,7 @@ export function buildSystemPrompt(): string {
     "",
     "Picking rules:",
     "- Prefer recipes whose main ingredients overlap with this week's deals.",
-    "- Avoid recipes whose titles appear in the recent meal logs (avoid repeats).",
+    "- The recent meal logs contain `cooked` (recently eaten) and `skipped` (recently rejected) titles. Avoid picking recipes whose titles appear in `cooked` recently. Deprioritize titles in `skipped` and consider `skip_reason` if present.",
     "- For every chosen recipe whose source has a kid version available, include the kid modification on the meal.",
     "- Honor any user preferences provided.",
     "",

@@ -2,14 +2,17 @@
 
 import { RefreshCw, ThumbsDown, ThumbsUp } from "lucide-react";
 import type { MealPlanMeal } from "@/lib/plan/types";
+import type { Thumb } from "@/lib/plan-ui/state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export interface MealCardProps {
   meal: MealPlanMeal;
   index: number;
   isSwapping: boolean;
+  thumb: Thumb;
   onSwap: (index: number) => void;
   onThumbsUp: (index: number) => void;
   onThumbsDown: (index: number) => void;
@@ -19,6 +22,7 @@ export function MealCard({
   meal,
   index,
   isSwapping,
+  thumb,
   onSwap,
   onThumbsUp,
   onThumbsDown,
@@ -56,18 +60,26 @@ export function MealCard({
 
         <div className="flex items-center gap-1 pt-1">
           <Button
-            variant="ghost"
+            variant={thumb === "up" ? "default" : "ghost"}
             size="icon-sm"
             aria-label="Thumbs up"
+            aria-pressed={thumb === "up"}
             onClick={() => onThumbsUp(index)}
+            className={cn(
+              thumb === "up" && "bg-success text-success-foreground hover:bg-success/90",
+            )}
           >
             <ThumbsUp />
           </Button>
           <Button
-            variant="ghost"
+            variant={thumb === "down" ? "default" : "ghost"}
             size="icon-sm"
             aria-label="Thumbs down"
+            aria-pressed={thumb === "down"}
             onClick={() => onThumbsDown(index)}
+            className={cn(
+              thumb === "down" && "bg-destructive text-primary-foreground hover:bg-destructive/90",
+            )}
           >
             <ThumbsDown />
           </Button>

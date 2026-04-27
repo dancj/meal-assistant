@@ -105,6 +105,45 @@ describe("validateInput", () => {
     }
   });
 
+  it("accepts a valid logs entry", () => {
+    const got = validateInput({
+      recipes: [],
+      deals: [],
+      logs: [{ week: "2026-04-13", cooked: ["Tacos"], skipped: [] }],
+      pantry: [],
+    });
+    expect(got.logs).toHaveLength(1);
+    expect(got.logs[0].week).toBe("2026-04-13");
+  });
+
+  it("throws InvalidRequestError when a log entry has malformed week", () => {
+    try {
+      validateInput({
+        recipes: [],
+        deals: [],
+        logs: [{ week: "bad", cooked: [], skipped: [] }],
+        pantry: [],
+      });
+      throw new Error("expected throw");
+    } catch (err) {
+      expect((err as InvalidRequestError).field).toBe("logs[0].week");
+    }
+  });
+
+  it("throws InvalidRequestError when a log entry has non-array cooked", () => {
+    try {
+      validateInput({
+        recipes: [],
+        deals: [],
+        logs: [{ week: "2026-04-13", cooked: "no", skipped: [] }],
+        pantry: [],
+      });
+      throw new Error("expected throw");
+    } catch (err) {
+      expect((err as InvalidRequestError).field).toBe("logs[0].cooked");
+    }
+  });
+
   it("throws InvalidRequestError with field 'pantry' when pantry contains non-strings", () => {
     try {
       validateInput({ recipes: [], deals: [], logs: [], pantry: [1, 2] });
@@ -275,7 +314,7 @@ describe("generatePlan", () => {
     const input: GeneratePlanInput = {
       recipes: [],
       deals: [],
-      logs: [{ date: "2026-04-18", title: "Tacos" }],
+      logs: [{ week: "2026-04-13", cooked: ["Tacos"], skipped: [] }],
       pantry: ["salt"],
       preferences: "no shellfish",
     };

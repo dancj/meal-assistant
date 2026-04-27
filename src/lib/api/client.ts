@@ -1,4 +1,5 @@
 import type { Deal } from "@/lib/deals/types";
+import type { MealLog } from "@/lib/log/types";
 import type { Recipe } from "@/lib/recipes/types";
 import type { GeneratePlanInput, MealPlan } from "@/lib/plan/types";
 
@@ -92,4 +93,12 @@ export function fetchDeals(): Promise<Deal[]> {
 
 export function generatePlan(input: GeneratePlanInput): Promise<MealPlan> {
   return postJson<MealPlan>("/api/generate-plan", input);
+}
+
+export function fetchRecentLogs(weeks = 8): Promise<MealLog[]> {
+  return getJson<MealLog[]>(`/api/log?weeks=${weeks}`);
+}
+
+export function postMealLog(entry: MealLog): Promise<{ ok: true }> {
+  return postJson<{ ok: true }>("/api/log", entry);
 }

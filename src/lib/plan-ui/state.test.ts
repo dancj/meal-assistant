@@ -21,8 +21,12 @@ const ready: PlanState = {
   status: "ready",
   recipes: [],
   deals: [],
+  recentLogs: [],
   plan: fivePlan,
   generating: false,
+  currentWeek: "2026-04-20",
+  thumbs: [null, null, null, null, null],
+  skipReason: "",
 };
 
 describe("planReducer / loading", () => {
@@ -31,14 +35,20 @@ describe("planReducer / loading", () => {
       type: "INIT_OK",
       recipes: [],
       deals: [],
+      recentLogs: [],
       plan: fivePlan,
+      currentWeek: "2026-04-20",
     });
     expect(next).toEqual({
       status: "ready",
       recipes: [],
       deals: [],
+      recentLogs: [],
       plan: fivePlan,
       generating: false,
+      currentWeek: "2026-04-20",
+      thumbs: [null, null, null, null, null],
+      skipReason: "",
     });
   });
 
@@ -69,7 +79,9 @@ describe("planReducer / error", () => {
       type: "INIT_OK",
       recipes: [],
       deals: [],
+      recentLogs: [],
       plan: fivePlan,
+      currentWeek: "2026-04-20",
     });
     expect(next.status).toBe("ready");
   });
@@ -114,6 +126,64 @@ describe("planReducer / ready — regenerate", () => {
     if (next.status === "ready") {
       expect(next.plan).toBe(ready.plan);
     }
+  });
+});
+
+describe("planReducer / ready — thumbs", () => {
+  it("SET_THUMB sets the per-meal value", () => {
+    const next = planReducer(ready, {
+      type: "SET_THUMB",
+      index: 2,
+      value: "up",
+    });
+    if (next.status !== "ready") throw new Error("expected ready");
+    expect(next.thumbs).toEqual([null, null, "up", null, null]);
+  });
+
+  it("SET_THUMB ignores out-of-range index", () => {
+    const next = planReducer(ready, {
+      type: "SET_THUMB",
+      index: 10,
+      value: "down",
+    });
+    expect(next).toBe(ready);
+  });
+
+  it("SET_SKIP_REASON updates the reason", () => {
+    const next = planReducer(ready, {
+      type: "SET_SKIP_REASON",
+      reason: "tired",
+    });
+    if (next.status !== "ready") throw new Error("expected ready");
+    expect(next.skipReason).toBe("tired");
+  });
+
+  it("REGEN_OK clears all thumbs (new plan, new clicks)", () => {
+    const withThumbs: PlanState = {
+      ...ready,
+      thumbs: ["up", "down", null, null, "up"],
+    };
+    const next = planReducer(withThumbs, {
+      type: "REGEN_OK",
+      plan: fivePlan,
+    });
+    if (next.status !== "ready") throw new Error("expected ready");
+    expect(next.thumbs).toEqual([null, null, null, null, null]);
+  });
+
+  it("SWAP_OK clears only the swapped slot's thumb", () => {
+    const withThumbs: PlanState = {
+      ...ready,
+      thumbs: ["up", "down", "up", "down", "up"],
+    };
+    const fresh = plan(["NEW", "x", "x", "x", "x"]);
+    const next = planReducer(withThumbs, {
+      type: "SWAP_OK",
+      index: 2,
+      plan: fresh,
+    });
+    if (next.status !== "ready") throw new Error("expected ready");
+    expect(next.thumbs).toEqual(["up", "down", null, "down", "up"]);
   });
 });
 

@@ -1,4 +1,5 @@
 import type { Deal } from "@/lib/deals/types";
+import type { MealLog } from "@/lib/log/types";
 import type { MealPlan } from "@/lib/plan/types";
 import type { Recipe } from "@/lib/recipes/types";
 
@@ -303,3 +304,23 @@ export const DEMO_PLAN: MealPlan = {
     },
   ],
 };
+
+export const DEMO_LOGS: MealLog[] = [
+  {
+    week: "2026-04-13",
+    cooked: ["Sheet-pan chicken thighs with broccoli", "Spaghetti with meat sauce"],
+    skipped: ["Salmon with rice and roasted carrots"],
+    skipReason: "ran out of time, did takeout",
+  },
+  {
+    week: "2026-04-06",
+    cooked: ["Chicken fried rice", "Black bean tacos", "Turkey chili"],
+    skipped: [],
+  },
+  {
+    week: "2026-03-30",
+    cooked: ["Spaghetti with meat sauce", "Sausage and white bean skillet"],
+    skipped: ["Sheet-pan chicken thighs with broccoli"],
+    skipReason: "kid was sick",
+  },
+];

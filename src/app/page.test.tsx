@@ -28,9 +28,11 @@ vi.mock("sonner", () => ({
   toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() },
 }));
 
-import Home from "./page";
+import { HomePage } from "@/components/home-page";
 import type { Deal } from "@/lib/deals/types";
 import type { MealPlan } from "@/lib/plan/types";
+
+const Home = () => <HomePage emailEnabled={false} />;
 
 const recipes = [
   { title: "R1", tags: [], kidVersion: null, content: "x", filename: "r1.md" },

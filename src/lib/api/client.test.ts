@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ApiError, fetchDeals, fetchRecipes, generatePlan } from "./client";
+import {
+  ApiError,
+  fetchDeals,
+  fetchRecipes,
+  generatePlan,
+  sendEmail,
+} from "./client";
 import type { GeneratePlanInput, MealPlan } from "@/lib/plan/types";
 
 const originalFetch = globalThis.fetch;
@@ -123,5 +129,49 @@ describe("generatePlan", () => {
     });
     await expect(generatePlan(input)).rejects.toThrow(/\/api\/generate-plan/);
     await expect(generatePlan(input)).rejects.toThrow(/network error/);
+  });
+});
+
+describe("sendEmail", () => {
+  const plan: MealPlan = { meals: [], groceryList: [] };
+
+  it("POSTs the plan as JSON to /api/email and returns the parsed body", async () => {
+    let capturedUrl: RequestInfo | URL | undefined;
+    let capturedInit: RequestInit | undefined;
+    mockFetch(async (url, init) => {
+      capturedUrl = url;
+      capturedInit = init;
+      return jsonResponse({ ok: true, id: "re_abc123" });
+    });
+
+    const result = await sendEmail(plan);
+
+    expect(result).toEqual({ ok: true, id: "re_abc123" });
+    expect(String(capturedUrl)).toBe("/api/email");
+    expect(capturedInit?.method).toBe("POST");
+    expect(
+      (capturedInit?.headers as Record<string, string>)["Content-Type"],
+    ).toBe("application/json");
+    expect(capturedInit?.body).toBe(JSON.stringify(plan));
+  });
+
+  it("throws ApiError on non-2xx with the upstream detail", async () => {
+    mockFetch(async () =>
+      jsonResponse({ error: "Resend upstream error", detail: "domain unverified" }, 502),
+    );
+    await expect(sendEmail(plan)).rejects.toMatchObject({
+      name: "ApiError",
+      status: 502,
+      endpoint: "/api/email",
+    });
+    await expect(sendEmail(plan)).rejects.toThrow(/Resend upstream error/);
+  });
+
+  it("throws ApiError on network failure", async () => {
+    mockFetch(async () => {
+      throw new TypeError("fetch failed");
+    });
+    await expect(sendEmail(plan)).rejects.toThrow(/\/api\/email/);
+    await expect(sendEmail(plan)).rejects.toThrow(/network error/);
   });
 });

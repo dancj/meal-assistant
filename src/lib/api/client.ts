@@ -107,3 +107,7 @@ export function postMealLog(entry: MealLog): Promise<{ ok: true }> {
 export function fetchPantry(): Promise<Pantry> {
   return getJson<Pantry>("/api/pantry");
 }
+
+export function sendEmail(plan: MealPlan): Promise<{ ok: true; id: string }> {
+  return postJson<{ ok: true; id: string }>("/api/email", plan);
+}

@@ -2,6 +2,7 @@
 
 import { RefreshCw } from "lucide-react";
 import { DealsSidebar } from "@/components/deals-sidebar";
+import { EmailButton } from "@/components/email-button";
 import { GroceryList } from "@/components/grocery-list";
 import { MealCard } from "@/components/meal-card";
 import { Button } from "@/components/ui/button";
@@ -59,7 +60,7 @@ function ErrorState({
   );
 }
 
-export function HomePage(_props: HomePageProps) {
+export function HomePage({ emailEnabled }: HomePageProps) {
   const { state, regenerate, swap, setThumb, setSkipReason, retry } =
     usePlanState();
 
@@ -78,17 +79,20 @@ export function HomePage(_props: HomePageProps) {
       </aside>
 
       <section className="md:col-span-8 lg:col-span-9 flex flex-col gap-6">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold">This week&apos;s meals</h1>
-          <Button
-            variant="outline"
-            onClick={regenerate}
-            disabled={generating}
-            aria-label="Regenerate plan"
-          >
-            <RefreshCw className={generating ? "animate-spin" : undefined} />
-            {generating ? "Generating…" : "Regenerate plan"}
-          </Button>
+          <div className="flex items-center gap-2">
+            {emailEnabled && <EmailButton plan={plan} disabled={generating} />}
+            <Button
+              variant="outline"
+              onClick={regenerate}
+              disabled={generating}
+              aria-label="Regenerate plan"
+            >
+              <RefreshCw className={generating ? "animate-spin" : undefined} />
+              {generating ? "Generating…" : "Regenerate plan"}
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

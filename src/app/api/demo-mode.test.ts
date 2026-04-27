@@ -55,7 +55,12 @@ describe("POST /api/generate-plan (demo mode)", () => {
     const request = new Request("http://localhost/api/generate-plan", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ recipes: [], deals: [], logs: [], pantry: [] }),
+      body: JSON.stringify({
+        recipes: [],
+        deals: [],
+        logs: [],
+        pantry: { staples: [], freezer: [] },
+      }),
     });
 
     const res = await POST(request);

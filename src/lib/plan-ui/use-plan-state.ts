@@ -76,7 +76,7 @@ export function usePlanState(): UsePlanStateResult {
       recipes,
       deals,
       logs: recentLogs,
-      pantry: [],
+      pantry: { staples: [], freezer: [] },
     };
     try {
       const plan = await generatePlan(input);
@@ -104,7 +104,7 @@ export function usePlanState(): UsePlanStateResult {
     if (current.status !== "ready" || current.generating) return;
     const { recipes, deals, recentLogs } = current;
     dispatch({ type: "REGEN_STARTED" });
-    void generatePlan({ recipes, deals, logs: recentLogs, pantry: [] })
+    void generatePlan({ recipes, deals, logs: recentLogs, pantry: { staples: [], freezer: [] } })
       .then((plan) => {
         dispatch({ type: "REGEN_OK", plan });
       })
@@ -120,7 +120,7 @@ export function usePlanState(): UsePlanStateResult {
     if (current.status !== "ready" || current.generating) return;
     const { recipes, deals, recentLogs } = current;
     dispatch({ type: "SWAP_STARTED" });
-    void generatePlan({ recipes, deals, logs: recentLogs, pantry: [] })
+    void generatePlan({ recipes, deals, logs: recentLogs, pantry: { staples: [], freezer: [] } })
       .then((plan) => {
         dispatch({ type: "SWAP_OK", index, plan });
       })

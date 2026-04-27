@@ -36,12 +36,14 @@ export function buildSystemPrompt(): string {
     "Picking rules:",
     "- Prefer recipes whose main ingredients overlap with this week's deals.",
     "- The recent meal logs contain `cooked` (recently eaten) and `skipped` (recently rejected) titles. Avoid picking recipes whose titles appear in `cooked` recently. Deprioritize titles in `skipped` and consider `skip_reason` if present.",
+    "- When `pantry.freezer` contains protein the household already paid for, prefer recipes that use that protein. Match on the main ingredient name and ignore freetext metadata in parens (date/store).",
     "- For every chosen recipe whose source has a kid version available, include the kid modification on the meal.",
     "- Honor any user preferences provided.",
     "",
     "Grocery-list rules:",
     "- Combine ingredient quantities across the chosen meals.",
-    "- Do NOT include any item that matches a pantry entry (case-insensitive).",
+    "- Do NOT include any item that matches a `pantry.staples` entry (case-insensitive). These are always-on-hand items.",
+    "- Do NOT include any protein already covered by `pantry.freezer` — match the protein name (e.g. \"chicken thighs\" matches \"chicken thighs (Costco, bought 2026-04-15)\"). Adjust quantities so the user only buys what's not already in the freezer.",
     "- Assign each item a store using the priority block below.",
     "- For each item that matches a deal in this week's deals, populate dealMatch with that deal's salePrice and validTo.",
     "",
@@ -95,7 +97,7 @@ export function buildUserMessage(
   const otherSections: string[] = [
     "THIS WEEK'S DEALS:\n" + JSON.stringify(groupDealsByStore(input.deals)),
     "RECENT MEAL LOGS (avoid repeats):\n" + JSON.stringify(input.logs),
-    "PANTRY (omit from grocery list):\n" + JSON.stringify(input.pantry),
+    "PANTRY:\n" + JSON.stringify(input.pantry),
   ];
 
   const trimmedPreferences = input.preferences?.trim() ?? "";

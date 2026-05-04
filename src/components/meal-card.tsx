@@ -70,32 +70,29 @@ export function MealCard({
 
         <div className="flex items-center gap-1 pt-1">
           <Button
-            variant={thumb === "up" ? "default" : "ghost"}
-            size="icon-sm"
+            variant={thumb === "up" ? "primary" : "ghost"}
+            size="icon"
             aria-label="Thumbs up"
             aria-pressed={thumb === "up"}
             onClick={() => onThumbsUp(index)}
-            className={cn(
-              thumb === "up" && "bg-success text-success-foreground hover:bg-success/90",
-            )}
           >
             <ThumbsUp />
           </Button>
           <Button
-            variant={thumb === "down" ? "default" : "ghost"}
-            size="icon-sm"
+            variant={thumb === "down" ? "primary" : "ghost"}
+            size="icon"
             aria-label="Thumbs down"
             aria-pressed={thumb === "down"}
             onClick={() => onThumbsDown(index)}
             className={cn(
-              thumb === "down" && "bg-destructive text-primary-foreground hover:bg-destructive/90",
+              thumb === "down" && "bg-rose-ink hover:bg-rose-ink/90 active:bg-rose-ink/90",
             )}
           >
             <ThumbsDown />
           </Button>
           <div className="ml-auto">
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
               onClick={() => onSwap(index)}
               disabled={isSwapping}

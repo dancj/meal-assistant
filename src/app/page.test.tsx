@@ -231,8 +231,178 @@ describe("Home page", () => {
     });
   });
 
-  // The old "swap fires generatePlan and replaces meals[index]" behavior is
-  // gone — clicking Swap now opens the SwapDrawer and the replacement is local.
-  // The new flow (drawer opens → suggestion clicked → meal replaces) is covered
-  // by tests added in U5.
+  describe("SwapDrawer flow", () => {
+    const recipesForSwap = [
+      {
+        title: "Pan-seared salmon",
+        tags: ["dinner", "fish"],
+        kidVersion: null,
+        content: "",
+        filename: "pan-seared-salmon.md",
+      },
+      {
+        title: "Honey chicken",
+        tags: ["dinner", "chicken"],
+        kidVersion: null,
+        content: "",
+        filename: "honey-chicken.md",
+      },
+      {
+        title: "Tofu bowl",
+        tags: ["dinner", "vegetarian"],
+        kidVersion: null,
+        content: "",
+        filename: "tofu-bowl.md",
+      },
+    ];
+
+    it("clicking Swap opens a dialog titled 'Choose a swap'", async () => {
+      fetchRecipesMock.mockResolvedValue(recipesForSwap);
+      fetchDealsMock.mockResolvedValue(deals);
+      generatePlanMock.mockResolvedValue(fivePlan);
+
+      render(<Home />);
+      await waitFor(() => {
+        expect(screen.getByText("Meal-A")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: /swap meal 2/i }));
+
+      const dialog = await screen.findByRole("dialog", {
+        name: "Choose a swap",
+      });
+      expect(dialog).toBeInTheDocument();
+    });
+
+    it("the dialog header shows the slot's day code and date", async () => {
+      fetchRecipesMock.mockResolvedValue(recipesForSwap);
+      fetchDealsMock.mockResolvedValue(deals);
+      generatePlanMock.mockResolvedValue(fivePlan);
+
+      render(<Home />);
+      await waitFor(() => {
+        expect(screen.getByText("Meal-A")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: /swap meal 2/i }));
+      await screen.findByRole("dialog");
+      // Slot index 1 = TUE, week start Mon 2026-04-27 → Apr 28
+      expect(screen.getByText(/TUE · Apr 28/)).toBeInTheDocument();
+    });
+
+    it("the dialog body lists ranked SwapSuggestion buttons", async () => {
+      fetchRecipesMock.mockResolvedValue(recipesForSwap);
+      fetchDealsMock.mockResolvedValue(deals);
+      generatePlanMock.mockResolvedValue(fivePlan);
+
+      render(<Home />);
+      await waitFor(() => {
+        expect(screen.getByText("Meal-A")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: /swap meal 2/i }));
+      await screen.findByRole("dialog");
+      const suggestions = screen.getAllByTestId("swap-suggestion");
+      expect(suggestions.length).toBe(3);
+    });
+
+    it("clicking a suggestion replaces the meal locally, dismisses the drawer, and reveals the grocery-stale hint", async () => {
+      fetchRecipesMock.mockResolvedValue(recipesForSwap);
+      fetchDealsMock.mockResolvedValue(deals);
+      generatePlanMock.mockResolvedValue(fivePlan);
+
+      render(<Home />);
+      await waitFor(() => {
+        expect(screen.getByText("Meal-A")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: /swap meal 2/i }));
+      await screen.findByRole("dialog");
+      const generateCallsBefore = generatePlanMock.mock.calls.length;
+
+      fireEvent.click(
+        screen.getByRole("button", { name: /Swap to Pan-seared salmon/i }),
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByRole("dialog")).toBeNull();
+      });
+
+      // Meal-B was at index 1 — now replaced by Pan-seared salmon
+      expect(screen.getByText("Pan-seared salmon")).toBeInTheDocument();
+      expect(screen.queryByText("Meal-B")).toBeNull();
+      // Other 4 meals unchanged
+      expect(screen.getByText("Meal-A")).toBeInTheDocument();
+      expect(screen.getByText("Meal-C")).toBeInTheDocument();
+      expect(screen.getByText("Meal-D")).toBeInTheDocument();
+      expect(screen.getByText("Meal-E")).toBeInTheDocument();
+      // No new generatePlan call — the swap is purely local
+      expect(generatePlanMock.mock.calls.length).toBe(generateCallsBefore);
+      // Grocery-stale hint appears
+      expect(screen.getByTestId("grocery-stale-hint")).toBeInTheDocument();
+    });
+
+    it("clicking 'Regenerate to refresh' inside the hint triggers regenerate and clears the hint", async () => {
+      fetchRecipesMock.mockResolvedValue(recipesForSwap);
+      fetchDealsMock.mockResolvedValue(deals);
+      generatePlanMock.mockResolvedValueOnce(fivePlan);
+
+      render(<Home />);
+      await waitFor(() => {
+        expect(screen.getByText("Meal-A")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: /swap meal 2/i }));
+      await screen.findByRole("dialog");
+      fireEvent.click(
+        screen.getByRole("button", { name: /Swap to Pan-seared salmon/i }),
+      );
+      await waitFor(() => {
+        expect(screen.getByTestId("grocery-stale-hint")).toBeInTheDocument();
+      });
+
+      const fresh: MealPlan = {
+        meals: fivePlan.meals.map((m, i) => ({ ...m, title: `Refreshed-${i}` })),
+        groceryList: fivePlan.groceryList,
+      };
+      generatePlanMock.mockResolvedValueOnce(fresh);
+
+      fireEvent.click(
+        screen.getByRole("button", { name: /Regenerate to refresh/i }),
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Refreshed-0")).toBeInTheDocument();
+      });
+      expect(screen.queryByTestId("grocery-stale-hint")).toBeNull();
+    });
+
+    it("renders the empty-state copy when every recipe is already in the plan", async () => {
+      // Recipes pool == titles already in the plan ⇒ ranker returns []
+      const matchingRecipes = fivePlan.meals.map((m, i) => ({
+        title: m.title,
+        tags: [] as string[],
+        kidVersion: null,
+        content: "",
+        filename: `meal-${i}.md`,
+      }));
+      fetchRecipesMock.mockResolvedValue(matchingRecipes);
+      fetchDealsMock.mockResolvedValue(deals);
+      generatePlanMock.mockResolvedValue(fivePlan);
+
+      render(<Home />);
+      await waitFor(() => {
+        expect(screen.getByText("Meal-A")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: /swap meal 2/i }));
+      await screen.findByRole("dialog");
+      expect(
+        screen.getByText(
+          /No swaps available — your week already uses every recipe\./,
+        ),
+      ).toBeInTheDocument();
+      expect(screen.queryAllByTestId("swap-suggestion")).toHaveLength(0);
+    });
+  });
 });

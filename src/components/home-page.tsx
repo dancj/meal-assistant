@@ -7,6 +7,7 @@ import { DealsSidebar } from "@/components/deals-sidebar";
 import { EmailButton } from "@/components/email-button";
 import { GroceryList } from "@/components/grocery-list";
 import { MealRow } from "@/components/meal-row";
+import { SwapDrawer, type SwapDrawerSlot } from "@/components/swap-drawer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eyebrow } from "@/components/ui/eyebrow";
@@ -15,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePlanState } from "@/lib/plan-ui/use-plan-state";
+import { swapSuggestions } from "@/lib/swap-ui";
 import {
   formatWeekRange,
   getMondayOfWeek,
@@ -73,19 +75,54 @@ function ErrorState({
 }
 
 export function HomePage({ emailEnabled }: HomePageProps) {
-  const { state, regenerate, swap, setThumb, setSkipReason, retry } =
-    usePlanState();
+  const {
+    state,
+    regenerate,
+    swap,
+    closeSwap,
+    applySwap,
+    setThumb,
+    setSkipReason,
+    retry,
+  } = usePlanState();
   // Compute the week start once at mount; stable across re-renders so the
   // Eyebrow's week-range/issue-number doesn't flicker if a render happens
   // to cross midnight UTC.
   const weekStart = useMemo(() => getMondayOfWeek(), []);
+
+  const swapTarget = state.status === "ready" ? state.swapTarget : null;
+  const drawerSlot = useMemo<SwapDrawerSlot | null>(() => {
+    if (state.status !== "ready" || swapTarget === null) return null;
+    const meal = state.plan.meals[swapTarget];
+    if (!meal) return null;
+    const day = synthesizeDay(meal, swapTarget, weekStart);
+    return {
+      index: swapTarget,
+      dayKey: day.dayKey,
+      dateLabel: day.dateLabel,
+      currentTitle: meal.title,
+      suggestions: swapSuggestions({
+        slotIndex: swapTarget,
+        currentMeal: meal,
+        allRecipes: state.recipes,
+        allMeals: state.plan.meals,
+        recentLogs: state.recentLogs,
+        weekStart,
+      }),
+    };
+  }, [
+    state,
+    swapTarget,
+    weekStart,
+  ]);
 
   if (state.status === "loading") return <LoadingState />;
   if (state.status === "error") {
     return <ErrorState message={state.error} onRetry={retry} />;
   }
 
-  const { deals, plan, generating, thumbs, skipReason } = state;
+  const { deals, plan, generating, thumbs, skipReason, planMutatedSinceGenerate } =
+    state;
   const anyDownThumbs = thumbs.some((t) => t === "down");
 
   return (
@@ -158,8 +195,35 @@ export function HomePage({ emailEnabled }: HomePageProps) {
           </div>
         )}
 
+        {planMutatedSinceGenerate && (
+          <p
+            className="text-mono-sm text-ink-3"
+            data-testid="grocery-stale-hint"
+          >
+            Grocery list out of date —{" "}
+            <button
+              type="button"
+              onClick={regenerate}
+              disabled={generating}
+              className="underline underline-offset-2 hover:text-ink disabled:opacity-50"
+            >
+              Regenerate to refresh
+            </button>
+            .
+          </p>
+        )}
+
         <GroceryList items={plan.groceryList} />
       </section>
+
+      <SwapDrawer
+        open={swapTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) closeSwap();
+        }}
+        slot={drawerSlot}
+        onSelect={applySwap}
+      />
     </div>
   );
 }

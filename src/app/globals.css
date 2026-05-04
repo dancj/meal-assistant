@@ -214,6 +214,8 @@
   /* Motion — `duration-fast|medium`, `ease-editorial` */
   --default-transition-timing-function: var(--ease-editorial);
   --default-transition-duration: var(--duration-fast);
+  --duration-fast: var(--duration-fast);
+  --duration-medium: var(--duration-medium);
   --animate-duration-fast: var(--duration-fast);
   --animate-duration-medium: var(--duration-medium);
   --ease-editorial: var(--ease-editorial);

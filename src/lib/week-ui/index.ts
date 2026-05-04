@@ -27,10 +27,15 @@ const MONTHS_SHORT = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-const TACO_KEYWORDS = [
+/**
+ * Keyword lists for theme detection. Re-used by `src/lib/swap-ui/` for theme
+ * boosting in suggestion ranking — keep this list as the single source of
+ * truth so synthesis and ranking can't drift.
+ */
+export const TACO_KEYWORDS: readonly string[] = [
   "taco", "tex-mex", "quesadilla", "fajita", "enchilada", "burrito",
 ];
-const FISH_KEYWORDS = [
+export const FISH_KEYWORDS: readonly string[] = [
   "fish", "salmon", "cod", "tilapia", "shrimp",
   "tuna", "sushi", "poke", "crab", "scallop", "halibut", "mahi",
 ];

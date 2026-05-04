@@ -35,6 +35,8 @@ export interface UsePlanStateResult {
   state: PlanState;
   regenerate: () => void;
   swap: (index: number) => void;
+  closeSwap: () => void;
+  applySwap: (index: number, recipe: Recipe) => void;
   setThumb: (index: number, kind: "up" | "down") => void;
   setSkipReason: (reason: string) => void;
   retry: () => void;
@@ -127,19 +129,18 @@ export function usePlanState(): UsePlanStateResult {
   }, []);
 
   const swap = useCallback((index: number) => {
-    const current = stateRef.current;
-    if (current.status !== "ready" || current.generating) return;
-    const { recipes, deals, recentLogs, pantry } = current;
-    dispatch({ type: "SWAP_STARTED" });
-    void generatePlan({ recipes, deals, logs: recentLogs, pantry })
-      .then((plan) => {
-        dispatch({ type: "SWAP_OK", index, plan });
-      })
-      .catch((err: unknown) => {
-        const msg = errorMessage(err);
-        dispatch({ type: "SWAP_FAILED", error: msg });
-        toast.error("Couldn't swap meal", { description: msg });
-      });
+    // SwapDrawer flow: opening the drawer is now the only side effect of the
+    // Swap button. The actual meal replacement happens in applySwap when the
+    // user picks a suggestion.
+    dispatch({ type: "OPEN_SWAP_DRAWER", index });
+  }, []);
+
+  const closeSwap = useCallback(() => {
+    dispatch({ type: "CLOSE_SWAP_DRAWER" });
+  }, []);
+
+  const applySwap = useCallback((index: number, recipe: Recipe) => {
+    dispatch({ type: "APPLY_SWAP_LOCAL", index, recipe });
   }, []);
 
   const setThumb = useCallback((index: number, kind: "up" | "down") => {
@@ -168,5 +169,14 @@ export function usePlanState(): UsePlanStateResult {
     void runInit();
   }, [runInit]);
 
-  return { state, regenerate, swap, setThumb, setSkipReason, retry };
+  return {
+    state,
+    regenerate,
+    swap,
+    closeSwap,
+    applySwap,
+    setThumb,
+    setSkipReason,
+    retry,
+  };
 }

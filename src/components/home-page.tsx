@@ -128,9 +128,11 @@ export function HomePage({ emailEnabled }: HomePageProps) {
               index={index}
               thumb={thumbs[index] ?? null}
               isSwapping={generating}
-              onSwap={swap}
-              onThumbsUp={(i) => setThumb(i, "up")}
-              onThumbsDown={(i) => setThumb(i, "down")}
+              actions={{
+                onSwap: swap,
+                onThumbsUp: (i) => setThumb(i, "up"),
+                onThumbsDown: (i) => setThumb(i, "down"),
+              }}
             />
           ))}
         </HairlineList>

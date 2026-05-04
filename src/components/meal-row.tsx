@@ -10,15 +10,19 @@ import type { MealPlanMeal } from "@/lib/plan/types"
 import { cn } from "@/lib/utils"
 import type { DayRowData } from "@/lib/week-ui"
 
+export interface MealRowActions {
+  onSwap: (index: number) => void
+  onThumbsUp: (index: number) => void
+  onThumbsDown: (index: number) => void
+}
+
 export interface MealRowProps {
   row: DayRowData
   meal: MealPlanMeal
   index: number
   thumb: Thumb
   isSwapping: boolean
-  onSwap: (index: number) => void
-  onThumbsUp: (index: number) => void
-  onThumbsDown: (index: number) => void
+  actions: MealRowActions
 }
 
 export function MealRow({
@@ -27,9 +31,7 @@ export function MealRow({
   index,
   thumb,
   isSwapping,
-  onSwap,
-  onThumbsUp,
-  onThumbsDown,
+  actions,
 }: MealRowProps) {
   return (
     <li
@@ -55,7 +57,7 @@ export function MealRow({
           size="icon"
           aria-label="Thumbs up"
           aria-pressed={thumb === "up"}
-          onClick={() => onThumbsUp(index)}
+          onClick={() => actions.onThumbsUp(index)}
         >
           <ThumbsUp />
         </Button>
@@ -64,7 +66,7 @@ export function MealRow({
           size="icon"
           aria-label="Thumbs down"
           aria-pressed={thumb === "down"}
-          onClick={() => onThumbsDown(index)}
+          onClick={() => actions.onThumbsDown(index)}
           className={cn(
             thumb === "down" &&
               "bg-rose-ink hover:bg-rose-ink/90 active:bg-rose-ink/90",
@@ -76,7 +78,7 @@ export function MealRow({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onSwap(index)}
+            onClick={() => actions.onSwap(index)}
             disabled={isSwapping}
             aria-label={`Swap meal ${index + 1}`}
           >

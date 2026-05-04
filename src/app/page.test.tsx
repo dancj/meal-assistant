@@ -231,37 +231,8 @@ describe("Home page", () => {
     });
   });
 
-  it("swap on meal index 3 changes only that card", async () => {
-    fetchRecipesMock.mockResolvedValue(recipes);
-    fetchDealsMock.mockResolvedValue(deals);
-    generatePlanMock.mockResolvedValueOnce(fivePlan);
-
-    render(<Home />);
-    await waitFor(() => {
-      expect(screen.getByText("Meal-D")).toBeInTheDocument();
-    });
-
-    const swapPlan: MealPlan = {
-      meals: [
-        { title: "SWAPPED", kidVersion: null, dealMatches: [] },
-        { title: "x", kidVersion: null, dealMatches: [] },
-        { title: "x", kidVersion: null, dealMatches: [] },
-        { title: "x", kidVersion: null, dealMatches: [] },
-        { title: "x", kidVersion: null, dealMatches: [] },
-      ],
-      groceryList: [],
-    };
-    generatePlanMock.mockResolvedValueOnce(swapPlan);
-
-    fireEvent.click(screen.getByRole("button", { name: /swap meal 4/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText("SWAPPED")).toBeInTheDocument();
-    });
-    expect(screen.getByText("Meal-A")).toBeInTheDocument();
-    expect(screen.getByText("Meal-B")).toBeInTheDocument();
-    expect(screen.getByText("Meal-C")).toBeInTheDocument();
-    expect(screen.getByText("Meal-E")).toBeInTheDocument();
-    expect(screen.queryByText("Meal-D")).toBeNull();
-  });
+  // The old "swap fires generatePlan and replaces meals[index]" behavior is
+  // gone — clicking Swap now opens the SwapDrawer and the replacement is local.
+  // The new flow (drawer opens → suggestion clicked → meal replaces) is covered
+  // by tests added in U5.
 });

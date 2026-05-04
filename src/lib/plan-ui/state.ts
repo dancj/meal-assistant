@@ -21,6 +21,14 @@ export type PlanState =
       currentWeek: string;
       thumbs: Thumb[];
       skipReason: string;
+      /** Slot index whose SwapDrawer is open, or null when no drawer is open. */
+      swapTarget: number | null;
+      /**
+       * True when state.plan.meals has been mutated since the last full
+       * regenerate (or initial load). Drives the "Grocery list out of date"
+       * hint above GroceryList. Cleared on REGEN_OK / INIT_OK.
+       */
+      planMutatedSinceGenerate: boolean;
     };
 
 export type PlanAction =
@@ -37,9 +45,9 @@ export type PlanAction =
   | { type: "REGEN_STARTED" }
   | { type: "REGEN_OK"; plan: MealPlan }
   | { type: "REGEN_FAILED"; error: string }
-  | { type: "SWAP_STARTED" }
-  | { type: "SWAP_OK"; index: number; plan: MealPlan }
-  | { type: "SWAP_FAILED"; error: string }
+  | { type: "OPEN_SWAP_DRAWER"; index: number }
+  | { type: "CLOSE_SWAP_DRAWER" }
+  | { type: "APPLY_SWAP_LOCAL"; index: number; recipe: Recipe }
   | { type: "SET_THUMB"; index: number; value: Thumb }
   | { type: "SET_SKIP_REASON"; reason: string }
   | { type: "RETRY" };
@@ -48,23 +56,27 @@ export const initialState: PlanState = { status: "loading" };
 
 const blankThumbs = (): Thumb[] => Array(REQUIRED_MEAL_COUNT).fill(null);
 
+function readyFromInit(action: Extract<PlanAction, { type: "INIT_OK" }>): PlanState {
+  return {
+    status: "ready",
+    recipes: action.recipes,
+    deals: action.deals,
+    recentLogs: action.recentLogs,
+    pantry: action.pantry,
+    plan: action.plan,
+    generating: false,
+    currentWeek: action.currentWeek,
+    thumbs: blankThumbs(),
+    skipReason: "",
+    swapTarget: null,
+    planMutatedSinceGenerate: false,
+  };
+}
+
 export function planReducer(state: PlanState, action: PlanAction): PlanState {
   switch (state.status) {
     case "loading": {
-      if (action.type === "INIT_OK") {
-        return {
-          status: "ready",
-          recipes: action.recipes,
-          deals: action.deals,
-          recentLogs: action.recentLogs,
-          pantry: action.pantry,
-          plan: action.plan,
-          generating: false,
-          currentWeek: action.currentWeek,
-          thumbs: blankThumbs(),
-          skipReason: "",
-        };
-      }
+      if (action.type === "INIT_OK") return readyFromInit(action);
       if (action.type === "INIT_FAILED") {
         return { status: "error", error: action.error };
       }
@@ -74,45 +86,49 @@ export function planReducer(state: PlanState, action: PlanAction): PlanState {
       if (action.type === "RETRY") {
         return { status: "loading" };
       }
-      if (action.type === "INIT_OK") {
-        return {
-          status: "ready",
-          recipes: action.recipes,
-          deals: action.deals,
-          recentLogs: action.recentLogs,
-          pantry: action.pantry,
-          plan: action.plan,
-          generating: false,
-          currentWeek: action.currentWeek,
-          thumbs: blankThumbs(),
-          skipReason: "",
-        };
-      }
+      if (action.type === "INIT_OK") return readyFromInit(action);
       return state;
     }
     case "ready": {
       switch (action.type) {
         case "REGEN_STARTED":
-        case "SWAP_STARTED":
           return { ...state, generating: true };
         case "REGEN_OK":
-          // New plan = clear all thumbs (they referred to the old meals).
+          // New plan = clear all thumbs (they referred to the old meals) and
+          // reset the grocery-stale flag (the new plan's grocery list reflects
+          // the fresh meal set).
           return {
             ...state,
             plan: action.plan,
             generating: false,
             thumbs: blankThumbs(),
+            planMutatedSinceGenerate: false,
           };
-        case "SWAP_OK": {
-          if (
-            action.index < 0 ||
-            action.index >= REQUIRED_MEAL_COUNT ||
-            action.plan.meals.length === 0
-          ) {
-            return { ...state, generating: false };
+        case "REGEN_FAILED":
+          return { ...state, generating: false };
+        case "OPEN_SWAP_DRAWER": {
+          // Refuse to open while a regenerate is in flight; the user's "Swap"
+          // intent would race with the regen and produce confusing UI.
+          if (state.generating) return state;
+          if (action.index < 0 || action.index >= REQUIRED_MEAL_COUNT) {
+            return state;
+          }
+          return { ...state, swapTarget: action.index };
+        }
+        case "CLOSE_SWAP_DRAWER":
+          return { ...state, swapTarget: null };
+        case "APPLY_SWAP_LOCAL": {
+          if (action.index < 0 || action.index >= REQUIRED_MEAL_COUNT) {
+            return state;
           }
           const nextMeals = state.plan.meals.slice();
-          nextMeals[action.index] = action.plan.meals[0];
+          nextMeals[action.index] = {
+            title: action.recipe.title,
+            kidVersion: action.recipe.kidVersion,
+            // Local swap can't compute deal matches (those are produced by
+            // /api/generate-plan). Empty-array is honest about the data we have.
+            dealMatches: [],
+          };
           // The swapped slot's thumb no longer applies; clear just that slot.
           const nextThumbs = state.thumbs.slice();
           nextThumbs[action.index] = null;
@@ -120,15 +136,13 @@ export function planReducer(state: PlanState, action: PlanAction): PlanState {
             ...state,
             plan: {
               meals: nextMeals,
-              groceryList: action.plan.groceryList,
+              groceryList: state.plan.groceryList,
             },
             thumbs: nextThumbs,
-            generating: false,
+            swapTarget: null,
+            planMutatedSinceGenerate: true,
           };
         }
-        case "REGEN_FAILED":
-        case "SWAP_FAILED":
-          return { ...state, generating: false };
         case "SET_THUMB": {
           if (action.index < 0 || action.index >= REQUIRED_MEAL_COUNT) {
             return state;

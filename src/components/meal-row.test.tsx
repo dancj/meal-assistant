@@ -2,7 +2,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { MealRow } from "./meal-row";
+import { MealRow, type MealRowActions } from "./meal-row";
 import type { DayRowData } from "@/lib/week-ui";
 
 const baseRow: DayRowData = {
@@ -19,7 +19,11 @@ const baseMeal = {
   dealMatches: [],
 };
 
-const noop = () => {};
+const noopActions: MealRowActions = {
+  onSwap: () => {},
+  onThumbsUp: () => {},
+  onThumbsDown: () => {},
+};
 
 describe("MealRow", () => {
   it("renders meal title in an h2 with text-h2 styling", () => {
@@ -30,9 +34,7 @@ describe("MealRow", () => {
         index={0}
         thumb={null}
         isSwapping={false}
-        onSwap={noop}
-        onThumbsUp={noop}
-        onThumbsDown={noop}
+        actions={noopActions}
       />,
     );
     const heading = screen.getByRole("heading", { level: 2 });
@@ -48,9 +50,7 @@ describe("MealRow", () => {
         index={2}
         thumb={null}
         isSwapping={false}
-        onSwap={noop}
-        onThumbsUp={noop}
-        onThumbsDown={noop}
+        actions={noopActions}
       />,
     );
     const li = container.querySelector("li") as HTMLElement;
@@ -65,9 +65,7 @@ describe("MealRow", () => {
         index={4}
         thumb={null}
         isSwapping={false}
-        onSwap={noop}
-        onThumbsUp={noop}
-        onThumbsDown={noop}
+        actions={noopActions}
       />,
     );
     expect(screen.getByText("FRI")).toBeInTheDocument();
@@ -82,9 +80,7 @@ describe("MealRow", () => {
         index={0}
         thumb={null}
         isSwapping={false}
-        onSwap={noop}
-        onThumbsUp={noop}
-        onThumbsDown={noop}
+        actions={noopActions}
       />,
     );
     expect(screen.getByText("use cheese")).toBeInTheDocument();
@@ -102,9 +98,7 @@ describe("MealRow", () => {
         index={1}
         thumb={null}
         isSwapping={false}
-        onSwap={noop}
-        onThumbsUp={noop}
-        onThumbsDown={noop}
+        actions={noopActions}
       />,
     );
     expect(screen.getByText("Taco Tuesday")).toBeInTheDocument();
@@ -118,9 +112,7 @@ describe("MealRow", () => {
         index={0}
         thumb="up"
         isSwapping={false}
-        onSwap={noop}
-        onThumbsUp={noop}
-        onThumbsDown={noop}
+        actions={noopActions}
       />,
     );
     const up = screen.getByRole("button", { name: "Thumbs up" });
@@ -136,9 +128,7 @@ describe("MealRow", () => {
         index={0}
         thumb="down"
         isSwapping={false}
-        onSwap={noop}
-        onThumbsUp={noop}
-        onThumbsDown={noop}
+        actions={noopActions}
       />,
     );
     const down = screen.getByRole("button", { name: "Thumbs down" });
@@ -146,8 +136,11 @@ describe("MealRow", () => {
     expect(down).toHaveClass("bg-rose-ink");
   });
 
-  it("clicking the thumbs-up button calls onThumbsUp(index)", () => {
-    const onThumbsUp = vi.fn();
+  it("clicking the thumbs-up button calls actions.onThumbsUp(index)", () => {
+    const actions: MealRowActions = {
+      ...noopActions,
+      onThumbsUp: vi.fn(),
+    };
     render(
       <MealRow
         row={baseRow}
@@ -155,17 +148,34 @@ describe("MealRow", () => {
         index={3}
         thumb={null}
         isSwapping={false}
-        onSwap={noop}
-        onThumbsUp={onThumbsUp}
-        onThumbsDown={noop}
+        actions={actions}
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: "Thumbs up" }));
-    expect(onThumbsUp).toHaveBeenCalledWith(3);
+    expect(actions.onThumbsUp).toHaveBeenCalledWith(3);
   });
 
-  it("clicking Swap calls onSwap(index)", () => {
-    const onSwap = vi.fn();
+  it("clicking the thumbs-down button calls actions.onThumbsDown(index)", () => {
+    const actions: MealRowActions = {
+      ...noopActions,
+      onThumbsDown: vi.fn(),
+    };
+    render(
+      <MealRow
+        row={baseRow}
+        meal={baseMeal}
+        index={3}
+        thumb={null}
+        isSwapping={false}
+        actions={actions}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Thumbs down" }));
+    expect(actions.onThumbsDown).toHaveBeenCalledWith(3);
+  });
+
+  it("clicking Swap calls actions.onSwap(index)", () => {
+    const actions: MealRowActions = { ...noopActions, onSwap: vi.fn() };
     render(
       <MealRow
         row={baseRow}
@@ -173,13 +183,11 @@ describe("MealRow", () => {
         index={2}
         thumb={null}
         isSwapping={false}
-        onSwap={onSwap}
-        onThumbsUp={noop}
-        onThumbsDown={noop}
+        actions={actions}
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: "Swap meal 3" }));
-    expect(onSwap).toHaveBeenCalledWith(2);
+    expect(actions.onSwap).toHaveBeenCalledWith(2);
   });
 
   it("isSwapping disables Swap and shows 'Swapping…' label", () => {
@@ -190,13 +198,27 @@ describe("MealRow", () => {
         index={0}
         thumb={null}
         isSwapping={true}
-        onSwap={noop}
-        onThumbsUp={noop}
-        onThumbsDown={noop}
+        actions={noopActions}
       />,
     );
     const swap = screen.getByRole("button", { name: "Swap meal 1" });
     expect(swap).toBeDisabled();
     expect(swap).toHaveTextContent(/swapping/i);
+  });
+
+  it("clicking a disabled Swap button does not fire actions.onSwap", () => {
+    const actions: MealRowActions = { ...noopActions, onSwap: vi.fn() };
+    render(
+      <MealRow
+        row={baseRow}
+        meal={baseMeal}
+        index={0}
+        thumb={null}
+        isSwapping={true}
+        actions={actions}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Swap meal 1" }));
+    expect(actions.onSwap).not.toHaveBeenCalled();
   });
 });

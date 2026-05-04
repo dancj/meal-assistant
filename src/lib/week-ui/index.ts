@@ -21,11 +21,6 @@ export interface DayRowData {
   };
 }
 
-export interface WeekHeaderData {
-  range: string;
-  issue: number;
-}
-
 const DAY_KEYS: readonly DayKey[] = ["MON", "TUE", "WED", "THU", "FRI"];
 const MONTHS_SHORT = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -52,8 +47,8 @@ export function getMondayOfWeek(now: Date = new Date()): Date {
 
 /** Three-letter uppercase day code (MON, TUE, …, SUN). UTC-based. */
 export function formatDayShort(date: Date): string {
-  const codes = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-  return codes[date.getUTCDay()] ?? "MON";
+  const codes = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] as const;
+  return codes[date.getUTCDay()];
 }
 
 function formatMmmDay(date: Date): string {

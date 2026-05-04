@@ -73,8 +73,12 @@ describe("weekIssueNumber", () => {
     expect(weekIssueNumber(isoDate("2025-12-29"))).toBe(1);
   });
 
-  it("returns week 1 for 2026-01-05", () => {
+  it("returns week 2 for 2026-01-05", () => {
     expect(weekIssueNumber(isoDate("2026-01-05"))).toBe(2);
+  });
+
+  it("handles ISO week 53 of 2026 (week containing Thu 2026-12-31)", () => {
+    expect(weekIssueNumber(isoDate("2026-12-28"))).toBe(53);
   });
 });
 

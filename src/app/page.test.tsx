@@ -78,6 +78,12 @@ const fivePlan: MealPlan = {
 };
 
 beforeEach(() => {
+  // Pin the clock so the Editorial Eyebrow assertion (week range + ISO week
+  // number) is stable. 2026-04-30 falls in ISO week 18 of 2026, week start
+  // Mon 2026-04-27. Fake only Date so setTimeout/setInterval keep working
+  // (waitFor depends on real timers).
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-04-30T12:00:00Z"));
   fetchRecipesMock.mockReset();
   fetchDealsMock.mockReset();
   fetchRecentLogsMock.mockReset();
@@ -91,11 +97,12 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.clearAllMocks();
 });
 
 describe("Home page", () => {
-  it("renders 5 meal cards, deals sidebar, and grocery list after load", async () => {
+  it("renders 5 meal rows, deals sidebar, and grocery list after load", async () => {
     fetchRecipesMock.mockResolvedValue(recipes);
     fetchDealsMock.mockResolvedValue(deals);
     generatePlanMock.mockResolvedValue(fivePlan);
@@ -111,6 +118,40 @@ describe("Home page", () => {
     expect(screen.getAllByLabelText(/Meal \d:/)).toHaveLength(5);
     expect(screen.getByLabelText(/this week's deals/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/grocery list/i)).toBeInTheDocument();
+  });
+
+  it("renders the Editorial week hero (eyebrow + display title)", async () => {
+    fetchRecipesMock.mockResolvedValue(recipes);
+    fetchDealsMock.mockResolvedValue(deals);
+    generatePlanMock.mockResolvedValue(fivePlan);
+
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Meal-A")).toBeInTheDocument();
+    });
+
+    // Eyebrow shows Mon-Sun ISO week range + week number
+    expect(screen.getByText(/Apr 27 — May 03/)).toBeInTheDocument();
+    expect(screen.getByText(/Issue 18/)).toBeInTheDocument();
+    // Display-typography hero
+    const heading = screen.getByRole("heading", { level: 1 });
+    expect(heading).toHaveTextContent("This week, we're cooking.");
+    expect(heading).toHaveClass("text-display");
+  });
+
+  it("each MealRow carries data-testid='day-row' (5 rows)", async () => {
+    fetchRecipesMock.mockResolvedValue(recipes);
+    fetchDealsMock.mockResolvedValue(deals);
+    generatePlanMock.mockResolvedValue(fivePlan);
+
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Meal-A")).toBeInTheDocument();
+    });
+
+    expect(screen.getAllByTestId("day-row")).toHaveLength(5);
   });
 
   it("does not render an Email me this button when emailEnabled=false", async () => {

@@ -27,9 +27,12 @@ function DrawerBackdrop({
     <DialogPrimitive.Backdrop
       data-slot="drawer-backdrop"
       className={cn(
-        "fixed inset-0 z-50 bg-ink/20 duration-medium ease-editorial",
-        "data-[open]:animate-in data-[open]:fade-in-0",
-        "data-[closed]:animate-out data-[closed]:fade-out-0",
+        "fixed inset-0 z-50 bg-ink/20",
+        "transition-opacity duration-medium ease-editorial",
+        // Idiomatic base-ui transition: starting/ending styles set the
+        // "before" state, the absence of those attributes is the "after"
+        // state, and `transition-opacity` interpolates between them.
+        "data-[starting-style]:opacity-0 data-[ending-style]:opacity-0",
         className,
       )}
       {...props}
@@ -62,9 +65,13 @@ function DrawerContent({
         className={cn(
           "fixed inset-y-0 right-0 z-50 flex h-full flex-col",
           "bg-paper border-l border-paper-edge",
-          "duration-medium ease-editorial",
-          "data-[open]:animate-in data-[open]:slide-in-from-right",
-          "data-[closed]:animate-out data-[closed]:slide-out-to-right",
+          "transition-transform duration-medium ease-editorial",
+          // Idiomatic base-ui transition: when [data-starting-style] (mount)
+          // and [data-ending-style] (unmount) are present, the popup sits at
+          // translate-x-full; absence of those attrs lets it transition to its
+          // natural translate(0) position.
+          "data-[starting-style]:translate-x-full",
+          "data-[ending-style]:translate-x-full",
           "outline-none",
           className,
         )}

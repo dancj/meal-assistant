@@ -38,7 +38,7 @@ describe("Drawer", () => {
     expect(popup.style.width).toBe("520px");
   });
 
-  it("includes duration-medium + ease-editorial + slide-in-from-right motion classes", () => {
+  it("includes duration-medium + ease-editorial + starting/ending translate motion classes", () => {
     render(
       <Drawer open onOpenChange={() => {}}>
         <DrawerContent>
@@ -49,7 +49,9 @@ describe("Drawer", () => {
     const popup = document.querySelector('[data-slot="drawer-content"]') as HTMLElement;
     expect(popup.className).toContain("duration-medium");
     expect(popup.className).toContain("ease-editorial");
-    expect(popup.className).toContain("data-[open]:slide-in-from-right");
+    expect(popup.className).toContain("transition-transform");
+    expect(popup.className).toContain("data-[starting-style]:translate-x-full");
+    expect(popup.className).toContain("data-[ending-style]:translate-x-full");
   });
 
   it("DrawerHeader's close-icon button carries aria-label='Close'", () => {

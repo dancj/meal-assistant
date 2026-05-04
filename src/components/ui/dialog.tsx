@@ -31,8 +31,10 @@ function DialogOverlay({
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
-        className
+        "fixed inset-0 isolate z-50 bg-ink/20 duration-medium ease-editorial",
+        "data-[open]:animate-in data-[open]:fade-in-0",
+        "data-[closed]:animate-out data-[closed]:fade-out-0",
+        className,
       )}
       {...props}
     />
@@ -53,8 +55,12 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-          className
+          "fixed top-1/2 left-1/2 z-50 flex flex-col w-full max-w-[640px] max-h-[90vh] -translate-x-1/2 -translate-y-1/2 overflow-hidden",
+          "rounded-md bg-paper border border-paper-edge text-ink",
+          "duration-medium ease-editorial outline-none",
+          "data-[open]:animate-in data-[open]:fade-in-0 data-[open]:zoom-in-95",
+          "data-[closed]:animate-out data-[closed]:fade-out-0 data-[closed]:zoom-out-95",
+          className,
         )}
         {...props}
       >
@@ -65,14 +71,13 @@ function DialogContent({
             render={
               <Button
                 variant="ghost"
-                className="absolute top-2 right-2"
                 size="icon"
+                aria-label="Close"
+                className="absolute top-3 right-3"
               />
             }
           >
-            <XIcon
-            />
-            <span className="sr-only">Close</span>
+            <XIcon />
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Popup>
@@ -84,7 +89,20 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2", className)}
+      className={cn(
+        "flex flex-col gap-2 px-6 pt-6 pb-4 border-b border-paper-edge",
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+
+function DialogBody({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="dialog-body"
+      className={cn("flex-1 overflow-y-auto px-6 py-4", className)}
       {...props}
     />
   )
@@ -102,8 +120,9 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end",
-        className
+        "sticky bottom-0 flex items-center justify-end gap-2 px-6 py-4",
+        "bg-paper-2 border-t border-paper-edge",
+        className,
       )}
       {...props}
     >
@@ -121,10 +140,7 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn(
-        "text-base leading-none font-medium",
-        className
-      )}
+      className={cn("text-h3 text-ink", className)}
       {...props}
     />
   )
@@ -138,16 +154,31 @@ function DialogDescription({
     <DialogPrimitive.Description
       data-slot="dialog-description"
       className={cn(
-        "text-sm text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
-        className
+        "text-body-sm text-ink-3 *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-ink",
+        className,
       )}
       {...props}
     />
   )
 }
 
+// Editorial alias re-exports (Modal = Dialog) so the Phase 3 Add-Meal modal
+// and other future surfaces can use the spec-aligned name. Same component.
+const Modal = Dialog
+const ModalTrigger = DialogTrigger
+const ModalPortal = DialogPortal
+const ModalClose = DialogClose
+const ModalOverlay = DialogOverlay
+const ModalContent = DialogContent
+const ModalHeader = DialogHeader
+const ModalBody = DialogBody
+const ModalFooter = DialogFooter
+const ModalTitle = DialogTitle
+const ModalDescription = DialogDescription
+
 export {
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -157,4 +188,15 @@ export {
   DialogPortal,
   DialogTitle,
   DialogTrigger,
+  Modal,
+  ModalBody,
+  ModalClose,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  ModalPortal,
+  ModalTitle,
+  ModalTrigger,
 }

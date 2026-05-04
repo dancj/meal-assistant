@@ -150,58 +150,83 @@ describe("usePlanState — initial load", () => {
   });
 });
 
-describe("usePlanState — swap", () => {
-  it("calls generatePlan with original recipes/deals and replaces meals[index]", async () => {
-    const recipes = [
-      { title: "R", tags: [], kidVersion: null, content: "x", filename: "r.md" },
-    ];
-    const deals = [
-      {
-        productName: "P",
-        brand: "B",
-        salePrice: "$1",
-        regularPrice: "$2",
-        promoType: "sale" as const,
-        validFrom: "2026-04-25",
-        validTo: "2026-05-01",
-        store: "aldi" as const,
-      },
-    ];
-    fetchRecipesMock.mockResolvedValue(recipes);
-    fetchDealsMock.mockResolvedValue(deals);
-    generatePlanMock.mockResolvedValueOnce(fivePlan);
-
+describe("usePlanState — swap drawer", () => {
+  async function readyHook() {
+    fetchRecipesMock.mockResolvedValue([]);
+    fetchDealsMock.mockResolvedValue([]);
+    generatePlanMock.mockResolvedValue(fivePlan);
     const { result } = renderHook(() => usePlanState());
     await waitFor(() => {
       expect(result.current.state.status).toBe("ready");
     });
+    return result;
+  }
 
-    const swapPlan = plan(["NEW", "x", "x", "x", "x"]);
-    generatePlanMock.mockResolvedValueOnce(swapPlan);
+  it("swap(index) opens the drawer without calling generatePlan", async () => {
+    const result = await readyHook();
+    const callsBefore = generatePlanMock.mock.calls.length;
 
     await act(async () => {
       result.current.swap(2);
     });
 
-    await waitFor(() => {
-      if (result.current.state.status !== "ready") return;
-      expect(result.current.state.generating).toBe(false);
-    });
+    if (result.current.state.status !== "ready") throw new Error("expected ready");
+    expect(result.current.state.swapTarget).toBe(2);
+    expect(generatePlanMock.mock.calls.length).toBe(callsBefore);
+  });
 
-    expect(generatePlanMock).toHaveBeenLastCalledWith({
-      recipes,
-      deals,
-      logs: [],
-      pantry: { staples: [], freezer: [] },
+  it("closeSwap() clears swapTarget", async () => {
+    const result = await readyHook();
+    await act(async () => {
+      result.current.swap(2);
     });
+    await act(async () => {
+      result.current.closeSwap();
+    });
+    if (result.current.state.status !== "ready") throw new Error("expected ready");
+    expect(result.current.state.swapTarget).toBeNull();
+  });
 
+  it("applySwap(index, recipe) replaces meals[index] locally and sets planMutatedSinceGenerate", async () => {
+    const result = await readyHook();
+    const r = {
+      title: "Pan-seared salmon",
+      tags: ["fish"],
+      kidVersion: null,
+      content: "",
+      filename: "salmon.md",
+    };
+    await act(async () => {
+      result.current.swap(2);
+    });
+    await act(async () => {
+      result.current.applySwap(2, r);
+    });
     if (result.current.state.status !== "ready") throw new Error("expected ready");
     expect(result.current.state.plan.meals.map((m) => m.title)).toEqual([
       "A",
       "B",
-      "NEW",
+      "Pan-seared salmon",
       "D",
       "E",
     ]);
+    expect(result.current.state.swapTarget).toBeNull();
+    expect(result.current.state.planMutatedSinceGenerate).toBe(true);
+  });
+
+  it("applySwap does not call generatePlan", async () => {
+    const result = await readyHook();
+    const callsBefore = generatePlanMock.mock.calls.length;
+    const r = {
+      title: "X",
+      tags: [],
+      kidVersion: null,
+      content: "",
+      filename: "x.md",
+    };
+    await act(async () => {
+      result.current.applySwap(0, r);
+    });
+    expect(generatePlanMock.mock.calls.length).toBe(callsBefore);
   });
 });

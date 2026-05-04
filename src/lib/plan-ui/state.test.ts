@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { initialState, planReducer, type PlanState } from "./state";
 import type { MealPlan, MealPlanMeal } from "@/lib/plan/types";
+import type { Recipe } from "@/lib/recipes/types";
 
 function meal(title: string): MealPlanMeal {
   return { title, kidVersion: null, dealMatches: [] };
@@ -12,6 +13,16 @@ function plan(titles: string[]): MealPlan {
     groceryList: [
       { item: titles[0] ?? "x", quantity: "1", store: "aldi", dealMatch: null },
     ],
+  };
+}
+
+function recipe(title: string, kidVersion: string | null = null): Recipe {
+  return {
+    title,
+    tags: [],
+    kidVersion,
+    content: "",
+    filename: `${title.toLowerCase()}.md`,
   };
 }
 
@@ -28,10 +39,12 @@ const ready: PlanState = {
   currentWeek: "2026-04-20",
   thumbs: [null, null, null, null, null],
   skipReason: "",
+  swapTarget: null,
+  planMutatedSinceGenerate: false,
 };
 
 describe("planReducer / loading", () => {
-  it("INIT_OK transitions to ready with generating: false", () => {
+  it("INIT_OK transitions to ready with all flags initialized", () => {
     const next = planReducer(initialState, {
       type: "INIT_OK",
       recipes: [],
@@ -52,6 +65,8 @@ describe("planReducer / loading", () => {
       currentWeek: "2026-04-20",
       thumbs: [null, null, null, null, null],
       skipReason: "",
+      swapTarget: null,
+      planMutatedSinceGenerate: false,
     });
   });
 
@@ -90,7 +105,7 @@ describe("planReducer / error", () => {
     expect(next.status).toBe("ready");
   });
 
-  it("ignores in-flight actions (REGEN_OK, SWAP_OK) while errored", () => {
+  it("ignores in-flight actions while errored", () => {
     const next = planReducer(errored, { type: "REGEN_OK", plan: fivePlan });
     expect(next).toBe(errored);
   });
@@ -105,16 +120,17 @@ describe("planReducer / ready — regenerate", () => {
     }
   });
 
-  it("REGEN_OK replaces the plan and clears generating", () => {
+  it("REGEN_OK replaces the plan, clears generating, and clears planMutatedSinceGenerate", () => {
     const fresh = plan(["V", "W", "X", "Y", "Z"]);
     const next = planReducer(
-      { ...ready, generating: true },
+      { ...ready, generating: true, planMutatedSinceGenerate: true },
       { type: "REGEN_OK", plan: fresh },
     );
     expect(next).toMatchObject({
       status: "ready",
       plan: fresh,
       generating: false,
+      planMutatedSinceGenerate: false,
     });
   });
 
@@ -130,6 +146,13 @@ describe("planReducer / ready — regenerate", () => {
     if (next.status === "ready") {
       expect(next.plan).toBe(ready.plan);
     }
+  });
+
+  it("REGEN_STARTED while drawer is open leaves swapTarget alone", () => {
+    const withDrawer: PlanState = { ...ready, swapTarget: 2 };
+    const next = planReducer(withDrawer, { type: "REGEN_STARTED" });
+    if (next.status !== "ready") throw new Error("expected ready");
+    expect(next.swapTarget).toBe(2);
   });
 });
 
@@ -174,94 +197,123 @@ describe("planReducer / ready — thumbs", () => {
     if (next.status !== "ready") throw new Error("expected ready");
     expect(next.thumbs).toEqual([null, null, null, null, null]);
   });
+});
 
-  it("SWAP_OK clears only the swapped slot's thumb", () => {
+describe("planReducer / ready — swap drawer", () => {
+  it("OPEN_SWAP_DRAWER sets swapTarget to the slot index", () => {
+    const next = planReducer(ready, { type: "OPEN_SWAP_DRAWER", index: 2 });
+    if (next.status !== "ready") throw new Error("expected ready");
+    expect(next.swapTarget).toBe(2);
+  });
+
+  it("OPEN_SWAP_DRAWER while generating is a no-op", () => {
+    const generating: PlanState = { ...ready, generating: true };
+    const next = planReducer(generating, { type: "OPEN_SWAP_DRAWER", index: 2 });
+    expect(next).toBe(generating);
+  });
+
+  it("OPEN_SWAP_DRAWER ignores out-of-range indices", () => {
+    expect(planReducer(ready, { type: "OPEN_SWAP_DRAWER", index: -1 })).toBe(ready);
+    expect(planReducer(ready, { type: "OPEN_SWAP_DRAWER", index: 99 })).toBe(ready);
+  });
+
+  it("CLOSE_SWAP_DRAWER clears swapTarget", () => {
+    const open: PlanState = { ...ready, swapTarget: 3 };
+    const next = planReducer(open, { type: "CLOSE_SWAP_DRAWER" });
+    if (next.status !== "ready") throw new Error("expected ready");
+    expect(next.swapTarget).toBeNull();
+  });
+});
+
+describe("planReducer / ready — apply swap (local)", () => {
+  it("APPLY_SWAP_LOCAL replaces meals[index] with recipe data and preserves grocery list", () => {
+    const r = recipe("Pan-seared salmon", "no spice");
+    const open: PlanState = { ...ready, swapTarget: 2 };
+    const next = planReducer(open, {
+      type: "APPLY_SWAP_LOCAL",
+      index: 2,
+      recipe: r,
+    });
+    if (next.status !== "ready") throw new Error("expected ready");
+    expect(next.plan.meals.map((m) => m.title)).toEqual([
+      "A",
+      "B",
+      "Pan-seared salmon",
+      "D",
+      "E",
+    ]);
+    expect(next.plan.meals[2]).toEqual({
+      title: "Pan-seared salmon",
+      kidVersion: "no spice",
+      dealMatches: [],
+    });
+    // Grocery list reference stays the same (still last regen's data).
+    expect(next.plan.groceryList).toBe(ready.plan.groceryList);
+  });
+
+  it("APPLY_SWAP_LOCAL clears the swapped slot's thumb but preserves others", () => {
+    const r = recipe("X");
     const withThumbs: PlanState = {
       ...ready,
       thumbs: ["up", "down", "up", "down", "up"],
+      swapTarget: 2,
     };
-    const fresh = plan(["NEW", "x", "x", "x", "x"]);
     const next = planReducer(withThumbs, {
-      type: "SWAP_OK",
+      type: "APPLY_SWAP_LOCAL",
       index: 2,
-      plan: fresh,
+      recipe: r,
     });
     if (next.status !== "ready") throw new Error("expected ready");
     expect(next.thumbs).toEqual(["up", "down", null, "down", "up"]);
   });
-});
 
-describe("planReducer / ready — swap", () => {
-  it("SWAP_OK replaces only meals[index] and replaces groceryList wholesale", () => {
-    const fresh = plan(["NEW", "ignored", "ignored", "ignored", "ignored"]);
-    const next = planReducer(
-      { ...ready, generating: true },
-      { type: "SWAP_OK", index: 2, plan: fresh },
-    );
-    expect(next.status).toBe("ready");
-    if (next.status !== "ready") return;
-    expect(next.generating).toBe(false);
-    expect(next.plan.meals.map((m) => m.title)).toEqual([
-      "A",
-      "B",
-      "NEW",
-      "D",
-      "E",
-    ]);
-    expect(next.plan.groceryList).toBe(fresh.groceryList);
-  });
-
-  it("SWAP_OK with index >= 5 leaves meals untouched but clears generating", () => {
-    const fresh = plan(["X", "X", "X", "X", "X"]);
-    const next = planReducer(
-      { ...ready, generating: true },
-      { type: "SWAP_OK", index: 7, plan: fresh },
-    );
-    expect(next.status).toBe("ready");
-    if (next.status !== "ready") return;
-    expect(next.plan).toBe(ready.plan);
-    expect(next.generating).toBe(false);
-  });
-
-  it("SWAP_OK with index < 0 leaves meals untouched", () => {
-    const fresh = plan(["X", "X", "X", "X", "X"]);
-    const next = planReducer(ready, {
-      type: "SWAP_OK",
-      index: -1,
-      plan: fresh,
-    });
-    expect(next.status).toBe("ready");
-    if (next.status !== "ready") return;
-    expect(next.plan).toBe(ready.plan);
-  });
-
-  it("SWAP_OK with empty meals in returned plan is a safe no-op on meals", () => {
-    const empty: MealPlan = { meals: [], groceryList: [] };
-    const next = planReducer(ready, {
-      type: "SWAP_OK",
-      index: 0,
-      plan: empty,
+  it("APPLY_SWAP_LOCAL clears swapTarget", () => {
+    const open: PlanState = { ...ready, swapTarget: 1 };
+    const next = planReducer(open, {
+      type: "APPLY_SWAP_LOCAL",
+      index: 1,
+      recipe: recipe("X"),
     });
     if (next.status !== "ready") throw new Error("expected ready");
-    expect(next.plan).toBe(ready.plan);
+    expect(next.swapTarget).toBeNull();
   });
 
-  it("SWAP_STARTED sets generating=true and keeps plan", () => {
-    const next = planReducer(ready, { type: "SWAP_STARTED" });
-    expect(next).toMatchObject({ generating: true });
-    if (next.status === "ready") {
-      expect(next.plan).toBe(ready.plan);
-    }
+  it("APPLY_SWAP_LOCAL sets planMutatedSinceGenerate to true", () => {
+    const next = planReducer(ready, {
+      type: "APPLY_SWAP_LOCAL",
+      index: 0,
+      recipe: recipe("X"),
+    });
+    if (next.status !== "ready") throw new Error("expected ready");
+    expect(next.planMutatedSinceGenerate).toBe(true);
   });
 
-  it("SWAP_FAILED keeps the existing plan and clears generating", () => {
-    const next = planReducer(
-      { ...ready, generating: true },
-      { type: "SWAP_FAILED", error: "x" },
-    );
-    expect(next).toMatchObject({ generating: false });
-    if (next.status === "ready") {
-      expect(next.plan).toBe(ready.plan);
-    }
+  it("REGEN_OK after APPLY_SWAP_LOCAL resets planMutatedSinceGenerate to false", () => {
+    const mutated = planReducer(ready, {
+      type: "APPLY_SWAP_LOCAL",
+      index: 0,
+      recipe: recipe("X"),
+    });
+    const fresh = plan(["F", "F", "F", "F", "F"]);
+    const next = planReducer(mutated, { type: "REGEN_OK", plan: fresh });
+    if (next.status !== "ready") throw new Error("expected ready");
+    expect(next.planMutatedSinceGenerate).toBe(false);
+  });
+
+  it("APPLY_SWAP_LOCAL ignores out-of-range indices", () => {
+    expect(
+      planReducer(ready, {
+        type: "APPLY_SWAP_LOCAL",
+        index: -1,
+        recipe: recipe("X"),
+      }),
+    ).toBe(ready);
+    expect(
+      planReducer(ready, {
+        type: "APPLY_SWAP_LOCAL",
+        index: 99,
+        recipe: recipe("X"),
+      }),
+    ).toBe(ready);
   });
 });
